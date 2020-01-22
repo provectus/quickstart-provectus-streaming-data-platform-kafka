@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Description:  This template creates security groups for the MSK cluster and their clients
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+
+  VPC:
+    Description: VPC Id for MSK cluster
+    Type: String
+
+Resources:
+  KafkaClientInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${EnvironmentName} Kafka clients group'
+      GroupDescription: This group allows to clients have access to the MSK cluster
+      VpcId: !Ref VPC
+
+  MSKSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${EnvironmentName} MSK cluster security group'
+      GroupDescription: Enable access to zookeeper and kafka brokers via ports (2181, 9092, 9094)
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2181
+          ToPort: 2181
+          SourceSecurityGroupId: !GetAtt
+            - KafkaClientInstanceSecurityGroup
+            - GroupId
+        - IpProtocol: tcp
+          FromPort: 9094
+          ToPort: 9094
+          SourceSecurityGroupId: !GetAtt
+            - KafkaClientInstanceSecurityGroup
+            - GroupId
+        - IpProtocol: tcp
+          FromPort: 9092
+          ToPort: 9092
+          SourceSecurityGroupId: !GetAtt
+            - KafkaClientInstanceSecurityGroup
+            - GroupId
+
+Outputs:
+  KafkaClientInstanceSecurityGroupID:
+    Description: The ID of the security group created for the kafka clients
+    Value: !GetAtt
+      - KafkaClientInstanceSecurityGroup
+      - GroupId
+
+  MSKSecurityGroupID:
+    Description: The ID of the security group created for the MSK clusters
+    Value: !GetAtt
+      - MSKSecurityGroup
+      - GroupId

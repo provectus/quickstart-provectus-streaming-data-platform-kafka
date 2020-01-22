@@ -24,13 +24,53 @@ Parameters:
       It cannot start or end with a hyphen (-).
     Type: String
 
+  InstanceType:
+    Type: String
+    Default: kafka.m5.large
+    Description: Broker instance type
+
 Resources:
 
   VPC:
-    Type: 'AWS::CloudFormation::Stack'
+    Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/vpc.template'
       Parameters:
         EnvironmentName:
           Ref: EnvironmentName
+
+  MSKSecurityGroups:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/msk-sg.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        VPC:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.VPC
+
+  MSKCluster:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/msk.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        VPC:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.VPC
+        ClientSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        InstanceType:
+          Ref: InstanceType
+        MSKSecurityGroupID:
+          Fn::GetAtt:
+            - MSKSecurityGroups
+            - Outputs.MSKSecurityGroupID
+
 

@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Description:  This template deploys a MSK inside an existsing VPC.
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+
+  VPC:
+    Description: VPC Id for MSK cluster
+    Type: String
+
+  ClientSubnets:
+    Description: List of the subnets where MSK instance will be run
+    Type: List<String>
+
+  InstanceType:
+    Description: Instance type of nodes of the MSK cluster
+    Type: String
+
+  MSKSecurityGroupID:
+    Description: MSK cluster security group ID
+    Type: String
+
+Resources:
+
+  MSKCluster:
+    Type: AWS::MSK::Cluster
+    Properties:
+      BrokerNodeGroupInfo:
+        ClientSubnets: !Ref ClientSubnets
+        InstanceType: !Ref InstanceType
+        SecurityGroups:
+          - !Ref MSKSecurityGroupID
+        StorageInfo:
+          EBSStorageInfo:
+            VolumeSize: 200
+      ClusterName: !Sub 'MSKCluster-${EnvironmentName}'
+      EncryptionInfo:
+        EncryptionInTransit:
+          ClientBroker: TLS_PLAINTEXT
+          InCluster: true
+      EnhancedMonitoring: PER_TOPIC_PER_BROKER
+      KafkaVersion: 2.3.1
+      NumberOfBrokerNodes: 3
+
+Outputs:
+
+  MSKClusterArn:
+    Description: The Arn for the MSK cluster
+    Value: !Ref MSKCluster
+
