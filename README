@@ -1,0 +1,6 @@
+
+ Code in this repository shows how to create a streaming data platform on AWS using 
+ ECS as a service registry and MSK as a delivery tool.
+
+ 
+

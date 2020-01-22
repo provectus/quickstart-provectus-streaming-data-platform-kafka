@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Streaming Data Platform (kafka edition), fast and safe way for data streaming
+Metadata:
+  Authors:
+    Description: German Osin (gosin@provectus.com), Andrew Saushkin (asaushkin@provectus.com),
+      Alexander Gritsenko (agritsenko@provectus.com), Andrew Paslavsky (apaslavsky@provectus.com),
+      Yurii Solopov (ysolopov@provectus.com)
+
+Parameters:
+
+  EnvironmentName:
+    Type: String
+    Description: Allow distinct object this stack from different ones.
+
+  QSS3BucketName:
+    Default: 'aws-quickstart'
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+
+Resources:
+
+  VPC:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/vpc.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+

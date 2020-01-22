@@ -1,0 +1,12 @@
+project:
+  name: sdp-kafka
+  regions:
+    - eu-west-1
+
+tests:
+  default:
+    parameters:
+      QSS3BucketName: $[taskcat_autobucket]
+      EnvironmentName: $[taskcat_random-string]
+    template: ./templates/streaming-platform.template
+
