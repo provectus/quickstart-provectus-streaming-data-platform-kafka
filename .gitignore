@@ -42,10 +42,5 @@ taskcat_outputs/
 .envrc
 
 
-/templates/common.yaml
-/templates/fds.yaml
-/templates/injection.yaml
-/templates/ml.yaml
-/templates/processing.yaml
-/templates/reporting.yaml
 /ci/
+nohup.out
