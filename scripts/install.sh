@@ -18,6 +18,7 @@ aws cloudformation deploy --template-file $templates/vpc.template --stack-name $
 vpc_meta=$(aws cloudformation describe-stacks --stack-name $vpc_stack)
 vpc_id=$(echo $vpc_meta | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "VPC") | .OutputValue')
 vpc_private_subnets=$(echo $vpc_meta | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "PrivateSubnets") | .OutputValue')
+vpc_public_subnets=$(echo $vpc_meta | jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "PublicSubnets") | .OutputValue')
 
 
 # Create security groups
@@ -41,3 +42,8 @@ ecs_stack="ECS-${env}"
 aws cloudformation deploy --template-file $templates/ecs.template --stack-name $ecs_stack \
     --capabilities CAPABILITY_IAM \
     --parameter-overrides "EnvironmentName=$env" "VPC=$vpc_id"
+
+
+alb_stack="ALB-${env}"
+aws cloudformation deploy --template-file $templates/alb.template --stack-name $alb_stack \
+    --parameter-overrides "EnvironmentName=$env" "VPC=$vpc_id" "VpcPublicSubnets=${vpc_public_subnets}"

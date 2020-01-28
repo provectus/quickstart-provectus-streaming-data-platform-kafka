@@ -73,4 +73,31 @@ Resources:
             - MSKSecurityGroups
             - Outputs.MSKSecurityGroupID
 
+  ECSCluster:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/ecs.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        VPC:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.VPC
+
+  ALB:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/alb.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        VPC:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.VPC
+        VpcPublicSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PublicSubnets
 
