@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Description:  Get information about Kafka cluster
+
+Parameters:
+  MskArn:
+    Description: MSK cluster ARN
+    Type: String
+
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+
+Resources:
+
+  MskInfo:
+    Type: Custom::MSK
+    Properties:
+      ServiceToken: !GetAtt MskInfoFunction.Arn
+      MskArn: !Ref MskArn
+      Brokers: ''
+      BrokersTls: ''
+
+  MskInfoFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: nodejs12.x
+      Handler: index.handler
+      Code:
+        ZipFile: >
+          var response = require('cfn-response');
+          var aws = require('aws-sdk');
+          exports.handler = function(event, context) {
+            var kafka = new aws.Kafka({apiVersion: '2018-11-14'});
+            var params = {
+                ClusterArn: event.ResourceProperties.MskArn
+            };
+            var responseStatus = "FAILED"
+            var responseData = {}
+            kafka.getBootstrapBrokers(params, function(err, data) {
+              if (err) {
+                responseData = {Error: "Invoke call failed"}
+                console.log(responseData.Error + ":\n", err)
+              }
+              else {
+                console.log(data);
+                responseData = {Brokers: data.BootstrapBrokerString, BrokersTls: data.BootstrapBrokerStringTls};
+                responseStatus = "SUCCESS"
+              }
+              response.send(event, context, responseStatus, responseData)
+            });
+          };
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: root
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:*
+            Resource: arn:aws:logs:*:*:*
+      - PolicyName: kafka
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - kafka:Describe*
+            - kafka:GetBootstrapBrokers
+            Resource: arn:aws:kafka:*:*:*
+
+Outputs:
+  MskBrokers:
+    Description: MSK Brokers
+    Value: !GetAtt MskInfo.Brokers
+    Export:
+      Name: !Sub ${EnvironmentName}:MskBrokers
+  MskBrokersTls:
+    Description: MSK TLS Brokers
+    Value: !GetAtt MskInfo.BrokersTls
+    Export:
+      Name: !Sub ${EnvironmentName}:MskBrokersTls

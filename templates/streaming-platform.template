@@ -73,6 +73,18 @@ Resources:
             - MSKSecurityGroups
             - Outputs.MSKSecurityGroupID
 
+  MSKClusterInfo:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/describe-kafka.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        MskArn:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.MSKClusterArn
+
   ECSCluster:
     Type: AWS::CloudFormation::Stack
     Properties:

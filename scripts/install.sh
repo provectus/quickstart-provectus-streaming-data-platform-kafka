@@ -32,11 +32,21 @@ msk_sg_security_group_id=$(echo $msk_sg_meta |jq -r '.Stacks[0].Outputs[] | sele
 
 # Create MSK Cluster
 msk_stack="MSK-${env}"
-
 aws cloudformation deploy --template-file $templates/msk.template --stack-name $msk_stack \
     --parameter-overrides "EnvironmentName=$env" "VPC=$vpc_id" "ClientSubnets=${vpc_private_subnets}" \
         "InstanceType=$msk_instance_type" "MSKSecurityGroupID=$msk_sg_security_group_id"
 
+msk_meta=$(aws cloudformation describe-stacks --stack-name $msk_stack)
+msk_arn=$(echo $msk_meta |jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "MSKClusterArn") | .OutputValue')
+
+msk_info_stack="MSK-Info-${env}"
+aws cloudformation deploy --template-file $templates/describe-kafka.template --stack-name $msk_info_stack \
+    --parameter-overrides "EnvironmentName=$env" "MskArn=$msk_arn" \
+    --capabilities CAPABILITY_IAM
+
+msk_info_meta=$(aws cloudformation describe-stacks --stack-name $msk_info_stack)
+#msk_info_brokers=$(echo $msk_info_meta |jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "MskBrokers") | .OutputValue')
+#msk_info_brokers_tls=$(echo $msk_info_meta |jq -r '.Stacks[0].Outputs[] | select(.OutputKey == "MskBrokersTls") | .OutputValue')
 
 ecs_stack="ECS-${env}"
 aws cloudformation deploy --template-file $templates/ecs.template --stack-name $ecs_stack \
