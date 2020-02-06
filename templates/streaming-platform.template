@@ -39,18 +39,6 @@ Resources:
         EnvironmentName:
           Ref: EnvironmentName
 
-  MSKSecurityGroups:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/msk-sg.template'
-      Parameters:
-        EnvironmentName:
-          Ref: EnvironmentName
-        VPC:
-          Fn::GetAtt:
-            - VPC
-            - Outputs.VPC
-
   MSKCluster:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -62,53 +50,27 @@ Resources:
           Fn::GetAtt:
             - VPC
             - Outputs.VPC
-        ClientSubnets:
+        PrivateSubnets:
           Fn::GetAtt:
             - VPC
             - Outputs.PrivateSubnets
         InstanceType:
           Ref: InstanceType
-        MSKSecurityGroupID:
-          Fn::GetAtt:
-            - MSKSecurityGroups
-            - Outputs.MSKSecurityGroupID
-
-  MSKClusterInfo:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/describe-kafka.template'
-      Parameters:
-        EnvironmentName:
-          Ref: EnvironmentName
-        MskArn:
-          Fn::GetAtt:
-            - MSKCluster
-            - Outputs.MSKClusterArn
 
   ECSCluster:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/ecs.template'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/ecs-fargate.template'
       Parameters:
-        EnvironmentName:
-          Ref: EnvironmentName
         VPC:
           Fn::GetAtt:
             - VPC
             - Outputs.VPC
-
-  ALB:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/alb.template'
-      Parameters:
-        EnvironmentName:
-          Ref: EnvironmentName
-        VPC:
+        PrivateSubnets:
           Fn::GetAtt:
             - VPC
-            - Outputs.VPC
-        VpcPublicSubnets:
+            - Outputs.PrivateSubnets
+        PublicSubnets:
           Fn::GetAtt:
             - VPC
             - Outputs.PublicSubnets

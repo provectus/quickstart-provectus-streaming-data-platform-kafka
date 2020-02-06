@@ -12,7 +12,7 @@ Parameters:
     Description: VPC Id for MSK cluster
     Type: String
 
-  ClientSubnets:
+  PrivateSubnets:
     Description: List of the subnets where MSK instance will be run
     Type: List<String>
 
@@ -20,20 +20,50 @@ Parameters:
     Description: Instance type of nodes of the MSK cluster
     Type: String
 
-  MSKSecurityGroupID:
-    Description: MSK cluster security group ID
-    Type: String
-
 Resources:
+
+  KafkaClientInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${EnvironmentName} Kafka clients group'
+      GroupDescription: This group allows to clients have access to the MSK cluster
+      VpcId: !Ref VPC
+
+  MSKSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${EnvironmentName} MSK cluster security group'
+      GroupDescription: Enable access to zookeeper and kafka brokers via ports (2181, 9092, 9094)
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2181
+          ToPort: 2181
+          SourceSecurityGroupId: !GetAtt
+            - KafkaClientInstanceSecurityGroup
+            - GroupId
+        - IpProtocol: tcp
+          FromPort: 9094
+          ToPort: 9094
+          SourceSecurityGroupId: !GetAtt
+            - KafkaClientInstanceSecurityGroup
+            - GroupId
+        - IpProtocol: tcp
+          FromPort: 9092
+          ToPort: 9092
+          SourceSecurityGroupId: !GetAtt
+            - KafkaClientInstanceSecurityGroup
+            - GroupId
+
 
   MSKCluster:
     Type: AWS::MSK::Cluster
     Properties:
       BrokerNodeGroupInfo:
-        ClientSubnets: !Ref ClientSubnets
+        ClientSubnets: !Ref PrivateSubnets
         InstanceType: !Ref InstanceType
         SecurityGroups:
-          - !Ref MSKSecurityGroupID
+          - !Ref MSKSecurityGroup
         StorageInfo:
           EBSStorageInfo:
             VolumeSize: 200
@@ -46,9 +76,103 @@ Resources:
       KafkaVersion: 2.3.1
       NumberOfBrokerNodes: 3
 
+  MskInfo:
+    Type: Custom::MSK
+    Properties:
+      ServiceToken: !GetAtt MskInfoFunction.Arn
+      MskArn: !Ref MSKCluster
+      Brokers: ''
+      BrokersTls: ''
+
+  MskInfoFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: nodejs12.x
+      Handler: index.handler
+      Code:
+        ZipFile: >
+          var response = require('cfn-response');
+          var aws = require('aws-sdk');
+          exports.handler = function(event, context) {
+            var kafka = new aws.Kafka({apiVersion: '2018-11-14'});
+            var params = {
+                ClusterArn: event.ResourceProperties.MskArn
+            };
+            var responseStatus = "FAILED"
+            var responseData = {}
+            kafka.getBootstrapBrokers(params, function(err, data) {
+              if (err) {
+                responseData = {Error: "Invoke call failed"}
+                console.log(responseData.Error + ":\n", err)
+              }
+              else {
+                console.log(data);
+                responseData = {Brokers: data.BootstrapBrokerString, BrokersTls: data.BootstrapBrokerStringTls};
+                responseStatus = "SUCCESS"
+              }
+              response.send(event, context, responseStatus, responseData)
+            });
+          };
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: kafka
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kafka:Describe*
+                  - kafka:GetBootstrapBrokers
+                Resource: arn:aws:kafka:*:*:*
+
+
 Outputs:
+
+  KafkaClientInstanceSecurityGroupID:
+    Description: The ID of the security group created for the kafka clients
+    Value: !GetAtt
+      - KafkaClientInstanceSecurityGroup
+      - GroupId
+
+  MSKSecurityGroupID:
+    Description: The ID of the security group created for the MSK clusters
+    Value: !GetAtt
+      - MSKSecurityGroup
+      - GroupId
 
   MSKClusterArn:
     Description: The Arn for the MSK cluster
     Value: !Ref MSKCluster
 
+  MskBrokers:
+    Description: MSK Brokers
+    Value: !GetAtt MskInfo.Brokers
+    Export:
+      Name: !Sub ${EnvironmentName}:MskBrokers
+  MskBrokersTls:
+    Description: MSK TLS Brokers
+    Value: !GetAtt MskInfo.BrokersTls
+    Export:
+      Name: !Sub ${EnvironmentName}:MskBrokersTls
