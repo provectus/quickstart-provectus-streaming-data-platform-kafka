@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: An CloudFormation template for Fargate.
+Parameters:
+  ServiceName:
+    Type: String
+    Default: kafka-connect
+  SchemaRegistryUrl:
+    Type: String
+    Default: http://schema-registry:8081
+  Image:
+    Type: String
+    Default: confluentinc/cp-kafka-connect:5.3.1
+  ContainerPort:
+    Type: String
+    Default: 8083
+  VPC:
+    Type: String
+  PrivateSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  ExecutionRole:
+    Type: String
+  TaskRole:
+    Type: String
+  Cluster:
+    Type: String
+  KafkaClientInstanceSecurityGroup:
+    Type: String
+  BootstrapServers:
+    Type: String
+  ZookeeperServers:
+    Type: String
+  PrivateNamespaceId:
+    Type: String
+
+Resources:
+
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join ['', [!Ref ServiceName, ContainerSecurityGroup]]
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref KafkaClientInstanceSecurityGroup
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['', [/ecs/, !Ref ServiceName, TaskDefinition]]
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: LogGroup
+    Properties:
+      Family: !Join ['', [!Ref ServiceName, TaskDefinition]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 1024
+      Memory: 2GB
+      ExecutionRoleArn: !Ref ExecutionRole
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Image: !Ref Image
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref LogGroup
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: CONNECT_BOOTSTRAP_SERVERS
+              Value: !Ref BootstrapServers
+            - Name: CONNECT_REST_ADVERTISED_HOST_NAME
+              Value: !Ref ServiceName
+            - Name: CONNECT_REST_PORT
+              Value: !Ref ContainerPort
+            - Name: CONNECT_GROUP_ID
+              Value: !Sub '${ServiceName}-connect-group'
+            - Name: CONNECT_CONFIG_STORAGE_TOPIC
+              Value: !Sub '${ServiceName}-connect-configs'
+            - Name: CONNECT_OFFSET_STORAGE_TOPIC
+              Value: !Sub '${ServiceName}-connect-offsets'
+            - Name: CONNECT_STATUS_STORAGE_TOPIC
+              Value: !Sub '${ServiceName}-connect-status'
+            - Name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
+              Value: 3
+            - Name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
+              Value: 3
+            - Name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
+              Value: 3
+            - Name: CONNECT_KEY_CONVERTER
+              Value: org.apache.kafka.connect.storage.StringConverter
+            - Name: CONNECT_VALUE_CONVERTER
+              Value: io.confluent.connect.avro.AvroConverter
+            - Name: CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL
+              Value: !Ref SchemaRegistryUrl
+            - Name: CONNECT_INTERNAL_KEY_CONVERTER
+              Value: "org.apache.kafka.connect.json.JsonConverter"
+            - Name: CONNECT_INTERNAL_VALUE_CONVERTER
+              Value: "org.apache.kafka.connect.json.JsonConverter"
+            - Name: CLASSPATH
+              Value: /usr/share/java/monitoring-interceptors/monitoring-interceptors-5.3.1.jar
+            - Name: CONNECT_PRODUCER_INTERCEPTOR_CLASSES
+              Value: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+            - Name: CONNECT_CONSUMER_INTERCEPTOR_CLASSES
+              Value: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+            - Name: CONNECT_PLUGIN_PATH
+              Value: "/usr/share/java,/usr/share/confluent-hub-components"
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      ServiceRegistries:
+        - RegistryArn: !GetAtt DiscoveryService.Arn
+          Port: !Ref ContainerPort
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            !Ref PrivateSubnets
+          SecurityGroups:
+            - !Ref ContainerSecurityGroup
+            - !Ref KafkaClientInstanceSecurityGroup
+
+  DiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Description: Kafka Connect Service
+      DnsConfig:
+        RoutingPolicy: MULTIVALUE
+        DnsRecords:
+          - TTL: 60
+            Type: A
+          - TTL: 60
+            Type: SRV
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: !Ref ServiceName
+      NamespaceId: !Ref PrivateNamespaceId

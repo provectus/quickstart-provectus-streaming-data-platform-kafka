@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: An example CloudFormation template for Fargate.
+Description: An CloudFormation template for Fargate.
 Parameters:
   VPC:
     Type: String
@@ -7,10 +7,9 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
   PrivateSubnets:
     Type: List<AWS::EC2::Subnet::Id>
-#  Certificate:
-#    Type: String
-#    # Update with the certificate ARN from Certificate Manager, which must exist in the same region.
-#    Default: 'arn:aws:acm:eu-west-1:572069631726:certificate/f1ea50a0-ec57-4802-b7da-e89156586252'
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
   Image:
     Type: String
     # Update with the Docker image. "You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag)."
@@ -18,7 +17,7 @@ Parameters:
   ServiceName:
     Type: String
     # update with the name of the service
-    Default: MyService
+    Default: api
   ContainerPort:
     Type: Number
     Default: 80
@@ -28,12 +27,6 @@ Parameters:
   HealthCheckPath:
     Type: String
     Default: /
-#  HostedZoneName:
-#    Type: String
-#    Default: quick-start-sdp-kafka.tk
-#  Subdomain:
-#    Type: String
-#    Default: myservice
   # for autoscaling
   MinContainers:
     Type: Number
@@ -46,11 +39,97 @@ Parameters:
   AutoScalingTargetValue:
     Type: Number
     Default: 50
+
+  KafkaClientInstanceSecurityGroup:
+    Type: String
+  BootstrapServers:
+    Type: String
+  ZookeeperServers:
+    Type: String
+
 Resources:
+
   Cluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Join ['', [!Ref ServiceName, Cluster]]
+      ClusterName: !Join ['-', [sdp, !Ref EnvironmentName]]
+
+  PrivateNamespace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+      Name: sdp.local
+      Vpc: !Ref VPC
+
+  # A role needed by ECS
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [!Ref ServiceName, ExecutionRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+
+  # A role for the containers
+  TaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [!Ref ServiceName, TaskRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      # ManagedPolicyArns:
+      #   -
+      # Policies:
+      #   -
+
+  # A role needed for auto scaling
+  AutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['', [!Ref ServiceName, AutoScalingRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'
+
+  ContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join ['', [!Ref ServiceName, ContainerSecurityGroup]]
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref KafkaClientInstanceSecurityGroup
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Join ['', [!Ref ServiceName, LoadBalancerSecurityGroup]]
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref LoadBalancerPort
+          ToPort: !Ref LoadBalancerPort
+          CidrIp: 0.0.0.0/0
+
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     # Makes sure the log group is created before it is used.
@@ -92,67 +171,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-group: !Ref LogGroup
               awslogs-stream-prefix: ecs
-  # A role needed by ECS
-  ExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Join ['', [!Ref ServiceName, ExecutionRole]]
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
-  # A role for the containers
-  TaskRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Join ['', [!Ref ServiceName, TaskRole]]
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: 'sts:AssumeRole'
-      # ManagedPolicyArns:
-      #   -
-      # Policies:
-      #   -
-  # A role needed for auto scaling
-  AutoScalingRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Join ['', [!Ref ServiceName, AutoScalingRole]]
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'
-  ContainerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Join ['', [!Ref ServiceName, ContainerSecurityGroup]]
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: !Ref ContainerPort
-          ToPort: !Ref ContainerPort
-          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
-  LoadBalancerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: !Join ['', [!Ref ServiceName, LoadBalancerSecurityGroup]]
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: !Ref LoadBalancerPort
-          ToPort: !Ref LoadBalancerPort
-          CidrIp: 0.0.0.0/0
+
   Service:
     Type: AWS::ECS::Service
     # This dependency is needed so that the load balancer is setup correctly in time
@@ -162,6 +181,9 @@ Resources:
       ServiceName: !Ref ServiceName
       Cluster: !Ref Cluster
       TaskDefinition: !Ref TaskDefinition
+      ServiceRegistries:
+        - RegistryArn: !GetAtt DiscoveryService.Arn
+          Port: 80
       DeploymentConfiguration:
         MinimumHealthyPercent: 100
         MaximumPercent: 200
@@ -181,6 +203,7 @@ Resources:
         - ContainerName: !Ref ServiceName
           ContainerPort: !Ref ContainerPort
           TargetGroupArn: !Ref TargetGroup
+
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -198,6 +221,7 @@ Resources:
           Value: 60 # default is 300
       TargetType: ip
       VpcId: !Ref VPC
+
   ListenerHTTPS:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -207,8 +231,7 @@ Resources:
       LoadBalancerArn: !Ref LoadBalancer
       Port: !Ref LoadBalancerPort
       Protocol: HTTP
-#      Certificates:
-#        - CertificateArn: !Ref Certificate
+
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -223,19 +246,12 @@ Resources:
         - !Ref LoadBalancerSecurityGroup
       Subnets:
         !Ref PublicSubnets
-#  DNSRecord:
-#    Type: AWS::Route53::RecordSet
-#    Properties:
-#      HostedZoneName: !Join ['', [!Ref HostedZoneName, .]]
-#      Name: !Join ['', [!Ref Subdomain, ., !Ref HostedZoneName, .]]
-#      Type: A
-#      AliasTarget:
-#        DNSName: !GetAtt LoadBalancer.DNSName
-#        HostedZoneId: !GetAtt LoadBalancer.CanonicalHostedZoneID
+
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Join ['', [/ecs/, !Ref ServiceName, TaskDefinition]]
+
   AutoScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
@@ -246,6 +262,7 @@ Resources:
       ServiceNamespace: ecs
       # "The Amazon Resource Name (ARN) of an AWS Identity and Access Management (IAM) role that allows Application Auto Scaling to modify your scalable target."
       RoleARN: !GetAtt AutoScalingRole.Arn
+
   AutoScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
@@ -260,30 +277,36 @@ Resources:
         # Keep things at or lower than 50% CPU utilization, for example
         TargetValue: !Ref AutoScalingTargetValue
 
-#  PrivateNamespace:
-#    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
-#    Properties:
-#      Name: sdp.service
-#      Vpc: !Ref VPC
-#
-#  NginxDiscoveryService:
-#    Type: AWS::ServiceDiscovery::Service
-#    Properties:
-#      Description: Discovery Service for the Nginx Application
-#      DnsConfig:
-#        RoutingPolicy: MULTIVALUE
-#        DnsRecords:
-#          - TTL: 60
-#            Type: A
-#          - TTL: 60
-#            Type: SRV
-#      HealthCheckCustomConfig:
-#        FailureThreshold: 1
-#      Name: nginx
-#      NamespaceId:
-#        !Ref PrivateNamespace
+  DiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Description: Discovery Service for the Nginx Application
+      DnsConfig:
+        RoutingPolicy: MULTIVALUE
+        DnsRecords:
+          - TTL: 60
+            Type: A
+          - TTL: 60
+            Type: SRV
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: api
+      NamespaceId:
+        !Ref PrivateNamespace
 
 Outputs:
   Endpoint:
     Description: Endpoint
     Value: !Join ['', ['http://', !GetAtt LoadBalancer.DNSName]]
+  ExecutionRole:
+    Description: ECS ExecutionRole
+    Value: !GetAtt ExecutionRole.Arn
+  TaskRole:
+    Description: ECS TaskRole
+    Value: !GetAtt TaskRole.Arn
+  Cluster:
+    Description: ECS Cluster reference
+    Value: !GetAtt Cluster.Arn
+  PrivateNamespaceId:
+    Description: Private namespace
+    Value: !Ref PrivateNamespace

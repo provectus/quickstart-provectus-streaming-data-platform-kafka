@@ -7,6 +7,6 @@ tests:
   default:
     parameters:
       QSS3BucketName: $[taskcat_autobucket]
-      EnvironmentName: $[taskcat_random-string]
+      EnvironmentName: $[taskcat_genpass_8]
     template: ./templates/streaming-platform.template
 

@@ -74,4 +74,45 @@ Resources:
           Fn::GetAtt:
             - VPC
             - Outputs.PublicSubnets
+        ServiceName: !Sub 'sdp-${EnvironmentName}'
+
+  SchemaRegistry:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/schema-registry.template'
+      Parameters:
+        VPC:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.VPC
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        ServiceName: !Sub 'schema-registry-${EnvironmentName}'
+        ExecutionRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.ExecutionRole
+        TaskRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.TaskRole
+        Cluster:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.Cluster
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        BootstrapServers:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.MskBrokers
+        ZookeeperServers:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.MskZookeepers
+
 
