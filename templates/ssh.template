@@ -41,6 +41,10 @@ Resources:
           FromPort: !Ref ContainerPort
           ToPort: !Ref ContainerPort
           SourceSecurityGroupId: !Ref KafkaClientInstanceSecurityGroup
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          CidrIp: 0.0.0.0/0
 
   LogGroup:
     Type: AWS::Logs::LogGroup
@@ -92,7 +96,7 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
+          AssignPublicIp: ENABLED
           Subnets:
             !Ref PrivateSubnets
           SecurityGroups:

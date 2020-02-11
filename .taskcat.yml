@@ -7,6 +7,7 @@ tests:
   default:
     parameters:
       QSS3BucketName: $[taskcat_autobucket]
-      EnvironmentName: $[taskcat_genpass_8]
+      EnvironmentName: taskcat
+      PublicSshKey: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsRe9vcYiSmTz9tBMQMxC/Y5d+QlJml01OQu4ovJihFTnG98/k7MajOM/AWp7+AK5rWNrcVCwtp+KR0KJXmxlsO2AM6bt124yacd0YRmn6W/sgDZUZT9eG0RvGmzyRUL6aHi9oNcyBJ5mzIWnfiJHc8BX9j0mX2x2nejo3Pmq4Xy97x2McFA253vZ0Yba8aW+XcLlSNpHLHZSdH0G/nDAZLTC0q5I/Tnl7GF4LILXbkdHIRLG2cUg+aQYZeJkW6XtKFeGIb02KjhqRFYcfTGvcUJbTlSS6ydU3pa0iigm2n6K6wmbJ16oIHUMiTBznfK8Q30+PneojXW8TgFYUYZLIQ== ags@localhost.localdomain
     template: ./templates/streaming-platform.template
 

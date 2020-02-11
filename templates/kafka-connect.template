@@ -6,7 +6,7 @@ Parameters:
     Default: kafka-connect
   SchemaRegistryUrl:
     Type: String
-    Default: http://schema-registry:8081
+    Default: http://schema-registry.sdp.local:8081
   Image:
     Type: String
     Default: confluentinc/cp-kafka-connect:5.3.1

@@ -24,6 +24,14 @@ Parameters:
       It cannot start or end with a hyphen (-).
     Type: String
 
+  PublicSshKey:
+    Description: SSH Key for the SFTP access
+    Type: String
+
+  BucketName:
+    Type: String
+    Default: ''
+
   InstanceType:
     Type: String
     Default: kafka.m5.large
@@ -66,6 +74,8 @@ Resources:
           Fn::GetAtt:
             - VPC
             - Outputs.VPC
+        EnvironmentName:
+          Ref: EnvironmentName
         PrivateSubnets:
           Fn::GetAtt:
             - VPC
@@ -75,6 +85,18 @@ Resources:
             - VPC
             - Outputs.PublicSubnets
         ServiceName: !Sub 'sdp-${EnvironmentName}'
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        ZookeeperServers:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.MskZookeepers
+        BootstrapServers:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.MskBrokers
 
   SchemaRegistry:
     Type: AWS::CloudFormation::Stack
@@ -114,5 +136,66 @@ Resources:
           Fn::GetAtt:
             - MSKCluster
             - Outputs.MskZookeepers
+        PrivateNamespaceId:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.PrivateNamespaceId
+
+  KafkaConnect:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-connect.template'
+      Parameters:
+        VPC:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.VPC
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        ServiceName: !Sub 'kafka-connect-${EnvironmentName}'
+        SchemaRegistryUrl: !Sub 'http://schema-registry-${EnvironmentName}.sdp.local:8081'
+        ExecutionRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.ExecutionRole
+        TaskRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.TaskRole
+        Cluster:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.Cluster
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        BootstrapServers:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.MskBrokers
+        ZookeeperServers:
+          Fn::GetAtt:
+            - MSKCluster
+            - Outputs.MskZookeepers
+        PrivateNamespaceId:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.PrivateNamespaceId
+
+  SFTP:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/sftp.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        BucketName:
+          Ref: BucketName
+        PublicSshKey:
+          Ref: PublicSshKey
+
 
 

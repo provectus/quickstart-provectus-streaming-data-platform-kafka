@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+
+  BucketName:
+    Description: Optional name of the bucket
+    Type: String
+    Default: ''
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+  PublicSshKey:
+    Description: Public SSH key for SFTP access
+    Type: String
+
+Conditions:
+  HasBucketName: !Not [!Equals [!Ref BucketName, '']]
+
+Resources:
+
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName:
+        # This requires to be EnvironmentName S3 name compatible. So, only lowercase
+        # is allowed
+        !If [HasBucketName, !Ref BucketName, !Sub 'sdp-input-bucket-${EnvironmentName}']
+
+  SftpAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub 'SftpAccessPolicy-${EnvironmentName}'
+      Description: Sftp access policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - 's3:PutObject'
+              - 's3:GetObject'
+              - 's3:DeleteObject'
+              - 's3:GetObjectVersion'
+              - 's3:DeleteObjectVersion'
+            Resource:
+              !Sub
+              - 'arn:aws:s3:::${Bucket}/input/*'
+              - { Bucket: !Ref S3Bucket }
+          -
+            Effect: Allow
+            Action:
+              - 's3:ListBucket'
+              - 's3:GetBucketLocation'
+            Resource:
+              !Sub
+              - 'arn:aws:s3:::${Bucket}'
+              - { Bucket: !Ref S3Bucket }
+            Condition:
+              StringLike:
+                's3:prefix': 'input/*'
+
+  SftpAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'transfer.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - !Ref SftpAccessPolicy
+
+  SftpServer:
+    Type: AWS::Transfer::Server
+    Properties:
+      EndpointType: PUBLIC
+
+  SftpUser:
+    Type: AWS::Transfer::User
+    Properties:
+      UserName: sdpuser
+      HomeDirectory: !Sub '/${S3Bucket}/input'
+      Role: !GetAtt SftpAccessRole.Arn
+      ServerId: !GetAtt SftpServer.ServerId
+      SshPublicKeys:
+        - !Ref PublicSshKey
