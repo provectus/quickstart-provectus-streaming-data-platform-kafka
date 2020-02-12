@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: An CloudFormation template for Fargate.
+Description: CloudFormation template for Kafka Swagger Rest service covered by ALB
 Parameters:
   VPC:
     Type: String
@@ -13,7 +13,6 @@ Parameters:
   Image:
     Type: String
     # Update with the Docker image. "You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag)."
-    Default: provectuslabs/kafka-swagger-rest:5bf1f29
   ServiceName:
     Type: String
     # update with the name of the service
@@ -34,15 +33,15 @@ Parameters:
     Default: 80
   HealthCheckPath:
     Type: String
-    Default: /
+    Default: /swagger/swagger-ui.html
   # for autoscaling
   MinContainers:
     Type: Number
-    Default: 2
+    Default: 1
   # for autoscaling
   MaxContainers:
     Type: Number
-    Default: 10
+    Default: 1
   # target CPU utilization (%)
   AutoScalingTargetValue:
     Type: Number
@@ -101,13 +100,13 @@ Resources:
       # 1024 (1 vCPU) - Available memory values: 2GB, 3GB, 4GB, 5GB, 6GB, 7GB, 8GB
       # 2048 (2 vCPU) - Available memory values: Between 4GB and 16GB in 1GB increments
       # 4096 (4 vCPU) - Available memory values: Between 8GB and 30GB in 1GB increments
-      Cpu: 256
+      Cpu: 1024
       # 0.5GB, 1GB, 2GB - Available cpu values: 256 (.25 vCPU)
       # 1GB, 2GB, 3GB, 4GB - Available cpu values: 512 (.5 vCPU)
       # 2GB, 3GB, 4GB, 5GB, 6GB, 7GB, 8GB - Available cpu values: 1024 (1 vCPU)
       # Between 4GB and 16GB in 1GB increments - Available cpu values: 2048 (2 vCPU)
       # Between 8GB and 30GB in 1GB increments - Available cpu values: 4096 (4 vCPU)
-      Memory: 0.5GB
+      Memory: 2GB
       # A role needed by ECS.
       # "The ARN of the task execution role that containers in this task can assume. All containers in this task are granted the permissions that are specified in this role."
       # "There is an optional task execution IAM role that you can specify with Fargate to allow your Fargate tasks to make API calls to Amazon ECR."
@@ -149,7 +148,7 @@ Resources:
       DeploymentConfiguration:
         MinimumHealthyPercent: 100
         MaximumPercent: 200
-      DesiredCount: 2
+      DesiredCount: 1
       # This may need to be adjusted if the container takes a while to start up
       HealthCheckGracePeriodSeconds: 30
       LaunchType: FARGATE
@@ -161,6 +160,7 @@ Resources:
             !Ref PrivateSubnets
           SecurityGroups:
             - !Ref ContainerSecurityGroup
+            - !Ref KafkaClientInstanceSecurityGroup
       LoadBalancers:
         - ContainerName: !Ref ServiceName
           ContainerPort: !Ref ContainerPort
@@ -169,10 +169,10 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckIntervalSeconds: 10
+      HealthCheckIntervalSeconds: 300
       # will look for a 200 status code by default unless specified otherwise
       HealthCheckPath: !Ref HealthCheckPath
-      HealthCheckTimeoutSeconds: 5
+      HealthCheckTimeoutSeconds: 10
       UnhealthyThresholdCount: 2
       HealthyThresholdCount: 2
       Name: !Join ['', [!Ref ServiceName, TargetGroup]]
@@ -180,7 +180,7 @@ Resources:
       Protocol: HTTP
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
-          Value: 60 # default is 300
+          Value: 300 # default is 300
       TargetType: ip
       VpcId: !Ref VPC
 

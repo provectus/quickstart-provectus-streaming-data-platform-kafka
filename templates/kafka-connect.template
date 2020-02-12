@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: An CloudFormation template for Fargate.
+Description: CloudFormation template for Fargate.
 Parameters:
   VPC:
     Type: String
