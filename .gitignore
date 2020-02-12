@@ -44,3 +44,4 @@ taskcat_outputs/
 
 /ci/
 nohup.out
+/templates/ssh.template

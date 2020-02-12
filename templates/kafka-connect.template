@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: An CloudFormation template for Fargate.
 Parameters:
+  VPC:
+    Type: String
+  PrivateSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
   ServiceName:
     Type: String
     Default: kafka-connect
@@ -13,10 +17,6 @@ Parameters:
   ContainerPort:
     Type: String
     Default: 8083
-  VPC:
-    Type: String
-  PrivateSubnets:
-    Type: List<AWS::EC2::Subnet::Id>
   ExecutionRole:
     Type: String
   TaskRole:
