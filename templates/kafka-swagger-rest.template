@@ -125,6 +125,9 @@ Resources:
               Value: !Join ['-', [!Ref ServiceName, group, !Ref EnvironmentName]]
             - Name: SWAGGER_KAFKA_0_SCHEMAREGISTRYURL
               Value: http://schema-registry.sdp.local:8081
+            - Name: SWAGGER_KAFKA_0_IGNORETOPICS
+              Value: kafka-connect-connect-configs,kafka-connect-connect-offsets,kafka-connect-connect-status
+
           # Send logs to CloudWatch Logs
           LogConfiguration:
             LogDriver: awslogs
@@ -242,7 +245,7 @@ Resources:
   DiscoveryService:
     Type: AWS::ServiceDiscovery::Service
     Properties:
-      Description: Discovery Service for the Nginx Application
+      Description: Discovery Service for the Kafka Swagger Rest
       DnsConfig:
         RoutingPolicy: MULTIVALUE
         DnsRecords:

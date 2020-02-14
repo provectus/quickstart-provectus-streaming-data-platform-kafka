@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Application provisioner. Creates kafka topics, schemas and connectors.
+Parameters:
+  VPC:
+    Type: String
+  PrivateSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  ServiceName:
+    Type: String
+    Default: provisioner
+  SchemaRegistryUrl:
+    Type: String
+    Default: http://schema-registry.sdp.local:8081
+  KafkaConnectUrl:
+    Type: String
+    Default: http://kafka-connect.sdp.local:8081
+  NewTopics:
+    Type: String
+    Default: walkins,bids,impressions,clicks,aggregates,events,visits
+  Image:
+    Type: String
+    Default: provectuslabs/sdp-kafka-quickstart-provisioner
+  ExecutionRole:
+    Type: String
+  TaskRole:
+    Type: String
+  Cluster:
+    Type: String
+  KafkaClientInstanceSecurityGroup:
+    Type: String
+  BootstrapServers:
+    Type: String
+  PrivateNamespaceId:
+    Type: String
+
+Resources:
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['', [/ecs/, !Ref ServiceName, TaskDefinition]]
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    DependsOn: LogGroup
+    Properties:
+      Family: !Join ['', [!Ref ServiceName, TaskDefinition]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 1024
+      Memory: 2GB
+      ExecutionRoleArn: !Ref ExecutionRole
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Image: !Ref Image
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref LogGroup
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: PROVISION_BOOTSTRAP_SERVERS
+              Value: !Ref BootstrapServers
+            - Name: PROVISION_NEW_KAFKA_TOPICS
+              Value: !Ref NewTopics
+            - Name: SCHEMA_REGISTRY_URL
+              Value: !Ref SchemaRegistryUrl
+            - Name: KAFKA_CONNECT_URL
+              Value: !Ref KafkaConnectUrl
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      ServiceRegistries:
+        - RegistryArn: !GetAtt DiscoveryService.Arn
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            !Ref PrivateSubnets
+          SecurityGroups:
+            - !Ref KafkaClientInstanceSecurityGroup
+
+  DiscoveryService:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+      Description: Discovery Service for the Provisioner Application
+      DnsConfig:
+        RoutingPolicy: MULTIVALUE
+        DnsRecords:
+          - TTL: 60
+            Type: A
+          - TTL: 60
+            Type: SRV
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: provisioner
+      NamespaceId:
+        !Ref PrivateNamespaceId

@@ -36,14 +36,14 @@ msk_info_client_group_id=$(echo $msk_meta |jq -r '.Stacks[0].Outputs[] | select(
 
 
 ecs_stack="ECS-${env}"
-aws cloudformation deploy --template-file $templates/ecs-fargate.template --stack-name $ecs_stack \
-    --capabilities CAPABILITY_NAMED_IAM \
-    --parameter-overrides "VPC=$vpc_id" \
-    "PrivateSubnets=${vpc_private_subnets}" "PublicSubnets=${vpc_public_subnets}" \
-    "EnvironmentName=$env" \
-    "KafkaClientInstanceSecurityGroup=$msk_info_client_group_id" \
-    "BootstrapServers=$msk_info_brokers" \
-    "ZookeeperServers=$msk_info_zookeepers"
+#aws cloudformation deploy --template-file $templates/ecs-fargate.template --stack-name $ecs_stack \
+#    --capabilities CAPABILITY_NAMED_IAM \
+#    --parameter-overrides "VPC=$vpc_id" \
+#    "PrivateSubnets=${vpc_private_subnets}" "PublicSubnets=${vpc_public_subnets}" \
+#    "EnvironmentName=$env" \
+#    "KafkaClientInstanceSecurityGroup=$msk_info_client_group_id" \
+#    "BootstrapServers=$msk_info_brokers" \
+#    "ZookeeperServers=$msk_info_zookeepers"
 
 
 ecs_meta=$(aws cloudformation describe-stacks --stack-name $ecs_stack)
@@ -99,6 +99,8 @@ sftp_stack="SFTP-${env}"
 #    "EnvironmentName=$env" \
 #    "PublicSshKey=ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAsRe9vcYiSmTz9tBMQMxC/Y5d+QlJml01OQu4ovJihFTnG98/k7MajOM/AWp7+AK5rWNrcVCwtp+KR0KJXmxlsO2AM6bt124yacd0YRmn6W/sgDZUZT9eG0RvGmzyRUL6aHi9oNcyBJ5mzIWnfiJHc8BX9j0mX2x2nejo3Pmq4Xy97x2McFA253vZ0Yba8aW+XcLlSNpHLHZSdH0G/nDAZLTC0q5I/Tnl7GF4LILXbkdHIRLG2cUg+aQYZeJkW6XtKFeGIb02KjhqRFYcfTGvcUJbTlSS6ydU3pa0iigm2n6K6wmbJ16oIHUMiTBznfK8Q30+PneojXW8TgFYUYZLIQ== ags@localhost.localdomain"
 
+set -x
+
 api_task="API-${env}"
 aws cloudformation deploy --template-file $templates/kafka-swagger-rest.template --stack-name $api_task \
     --capabilities CAPABILITY_NAMED_IAM \
@@ -106,7 +108,7 @@ aws cloudformation deploy --template-file $templates/kafka-swagger-rest.template
     "PublicSubnets=${vpc_public_subnets}" \
     "PrivateSubnets=${vpc_private_subnets}" \
     "EnvironmentName=$env" \
-    "Image=provectuslabs/kafka-swagger-rest:5bf1f29" \
+    "Image=provectuslabs/kafka-swagger-rest:1cc5433" \
     "ExecutionRole=$exec_role" \
     "TaskRole=$task_role" \
     "Cluster=$ecs_cluster" \
@@ -115,3 +117,15 @@ aws cloudformation deploy --template-file $templates/kafka-swagger-rest.template
     "ZookeeperServers=$msk_info_zookeepers" \
     "PrivateNamespaceId=$ecs_private_ns" \
     "AutoScalingRole=$ecs_autoscaling_role"
+
+provision_task="Provision-${env}"
+aws cloudformation deploy --template-file $templates/app-provisioner.template --stack-name $provision_task \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides "VPC=$vpc_id" \
+    "PrivateSubnets=${vpc_private_subnets}" \
+    "ExecutionRole=$exec_role" \
+    "TaskRole=$task_role" \
+    "Cluster=$ecs_cluster" \
+    "KafkaClientInstanceSecurityGroup=$msk_info_client_group_id" \
+    "BootstrapServers=$msk_info_brokers" \
+    "PrivateNamespaceId=$ecs_private_ns"

@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "namespace": "com.provectus.fds.avro",
+  "name": "Location",
+  "version": "1",
+  "fields": [
+    { "name": "app_uid", "type": "string" },
+    { "name": "timestamp", "type": "long" },
+    { "name": "longitude", "type": "double" },
+    { "name": "latitude", "type": "double" }
+  ]
+}

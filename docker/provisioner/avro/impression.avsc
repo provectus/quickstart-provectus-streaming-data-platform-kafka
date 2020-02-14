@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "namespace": "com.provectus.fds.avro",
+  "name": "Impression",
+  "version": "1",
+  "fields": [
+    { "name": "tx_id", "type": "string" },
+    { "name": "win_price", "type": "int" },
+    { "name": "type", "type": "string", "default": "imp"}
+  ]
+}
