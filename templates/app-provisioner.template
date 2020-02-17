@@ -81,6 +81,7 @@ Resources:
       LaunchType: FARGATE
       ServiceRegistries:
         - RegistryArn: !GetAtt DiscoveryService.Arn
+          Port: 80
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
