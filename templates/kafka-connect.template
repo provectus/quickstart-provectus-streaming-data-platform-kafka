@@ -58,7 +58,7 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      Cpu: 1024
+      Cpu: "1024"
       Memory: 2GB
       ExecutionRoleArn: !Ref ExecutionRole
       TaskRoleArn: !Ref TaskRole
@@ -89,11 +89,11 @@ Resources:
             - Name: CONNECT_STATUS_STORAGE_TOPIC
               Value: !Sub '${ServiceName}-connect-status'
             - Name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
-              Value: 3
+              Value: "3"
             - Name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
-              Value: 3
+              Value: "3"
             - Name: CONNECT_STATUS_STORAGE_REPLICATION_FACTOR
-              Value: 3
+              Value: "3"
             - Name: CONNECT_KEY_CONVERTER
               Value: org.apache.kafka.connect.storage.StringConverter
             - Name: CONNECT_VALUE_CONVERTER
