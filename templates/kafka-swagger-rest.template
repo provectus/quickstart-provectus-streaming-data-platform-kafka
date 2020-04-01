@@ -13,6 +13,7 @@ Parameters:
   Image:
     Type: String
     # Update with the Docker image. "You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag)."
+    Default: provectuslabs/kafka-swagger-rest:1cc5433
   ServiceName:
     Type: String
     # update with the name of the service
@@ -50,8 +51,6 @@ Parameters:
   KafkaClientInstanceSecurityGroup:
     Type: String
   BootstrapServers:
-    Type: String
-  ZookeeperServers:
     Type: String
   PrivateNamespaceId:
     Type: String
@@ -100,7 +99,7 @@ Resources:
       # 1024 (1 vCPU) - Available memory values: 2GB, 3GB, 4GB, 5GB, 6GB, 7GB, 8GB
       # 2048 (2 vCPU) - Available memory values: Between 4GB and 16GB in 1GB increments
       # 4096 (4 vCPU) - Available memory values: Between 8GB and 30GB in 1GB increments
-      Cpu: 1024
+      Cpu: "1024"
       # 0.5GB, 1GB, 2GB - Available cpu values: 256 (.25 vCPU)
       # 1GB, 2GB, 3GB, 4GB - Available cpu values: 512 (.5 vCPU)
       # 2GB, 3GB, 4GB, 5GB, 6GB, 7GB, 8GB - Available cpu values: 1024 (1 vCPU)
@@ -183,7 +182,7 @@ Resources:
       Protocol: HTTP
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
-          Value: 300 # default is 300
+          Value: "300" # default is 300
       TargetType: ip
       VpcId: !Ref VPC
 
@@ -203,7 +202,7 @@ Resources:
       LoadBalancerAttributes:
         # this is the default, but is specified here in case it needs to be changed
         - Key: idle_timeout.timeout_seconds
-          Value: 60
+          Value: "60"
       Name: !Join ['', [!Ref ServiceName, LoadBalancer]]
       # "internal" is also an option
       Scheme: internet-facing

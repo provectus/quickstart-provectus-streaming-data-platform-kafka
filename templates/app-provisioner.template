@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Application provisioner. Creates kafka topics, schemas and connectors.
 Parameters:
-  VPC:
-    Type: String
   PrivateSubnets:
     Type: List<AWS::EC2::Subnet::Id>
   ServiceName:
@@ -48,7 +46,7 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      Cpu: 1024
+      Cpu: "1024"
       Memory: 2GB
       ExecutionRoleArn: !Ref ExecutionRole
       TaskRoleArn: !Ref TaskRole

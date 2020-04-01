@@ -47,7 +47,7 @@ Resources:
         EnvironmentName:
           Ref: EnvironmentName
 
-  MSKCluster:
+  MSKClusterStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/msk.template'
@@ -76,27 +76,6 @@ Resources:
             - Outputs.VPC
         EnvironmentName:
           Ref: EnvironmentName
-        PrivateSubnets:
-          Fn::GetAtt:
-            - VPC
-            - Outputs.PrivateSubnets
-        PublicSubnets:
-          Fn::GetAtt:
-            - VPC
-            - Outputs.PublicSubnets
-        ServiceName: !Sub 'sdp-${EnvironmentName}'
-        KafkaClientInstanceSecurityGroup:
-          Fn::GetAtt:
-            - MSKCluster
-            - Outputs.KafkaClientInstanceSecurityGroupID
-        ZookeeperServers:
-          Fn::GetAtt:
-            - MSKCluster
-            - Outputs.MskZookeepers
-        BootstrapServers:
-          Fn::GetAtt:
-            - MSKCluster
-            - Outputs.MskBrokers
 
   SchemaRegistry:
     Type: AWS::CloudFormation::Stack
@@ -126,16 +105,12 @@ Resources:
             - Outputs.Cluster
         KafkaClientInstanceSecurityGroup:
           Fn::GetAtt:
-            - MSKCluster
+            - MSKClusterStack
             - Outputs.KafkaClientInstanceSecurityGroupID
         BootstrapServers:
           Fn::GetAtt:
-            - MSKCluster
+            - MSKClusterStack
             - Outputs.MskBrokers
-        ZookeeperServers:
-          Fn::GetAtt:
-            - MSKCluster
-            - Outputs.MskZookeepers
         PrivateNamespaceId:
           Fn::GetAtt:
             - ECSCluster
@@ -170,16 +145,12 @@ Resources:
             - Outputs.Cluster
         KafkaClientInstanceSecurityGroup:
           Fn::GetAtt:
-            - MSKCluster
+            - MSKClusterStack
             - Outputs.KafkaClientInstanceSecurityGroupID
         BootstrapServers:
           Fn::GetAtt:
-            - MSKCluster
+            - MSKClusterStack
             - Outputs.MskBrokers
-        ZookeeperServers:
-          Fn::GetAtt:
-            - MSKCluster
-            - Outputs.MskZookeepers
         PrivateNamespaceId:
           Fn::GetAtt:
             - ECSCluster
@@ -197,5 +168,85 @@ Resources:
         PublicSshKey:
           Ref: PublicSshKey
 
+  KafkaSwaggerRest:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-swagger-rest.template'
+      Parameters:
+        VPC:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.VPC
+        PublicSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PublicSubnets
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        EnvironmentName:
+          Ref: EnvironmentName
+        ExecutionRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.ExecutionRole
+        TaskRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.TaskRole
+        Cluster:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.Cluster
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        BootstrapServers:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.MskBrokers
+        AutoScalingRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.AutoScalingRole
+        PrivateNamespaceId:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.PrivateNamespaceId
 
+  AppProvisioner:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/app-provisioner.template'
+      Parameters:
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        ExecutionRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.ExecutionRole
+        TaskRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.TaskRole
+        Cluster:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.Cluster
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        BootstrapServers:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.MskBrokers
+        PrivateNamespaceId:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.PrivateNamespaceId
 
