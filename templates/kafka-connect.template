@@ -27,8 +27,6 @@ Parameters:
     Type: String
   BootstrapServers:
     Type: String
-  ZookeeperServers:
-    Type: String
   PrivateNamespaceId:
     Type: String
 
