@@ -65,11 +65,7 @@ function create_ecs_fargate(){
         aws cloudformation deploy --template-file $templates/ecs-fargate.template --stack-name $stack \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides "VPC=$vpc_id" \
-            "PrivateSubnets=${vpc_private_subnets}" "PublicSubnets=${vpc_public_subnets}" \
-            "EnvironmentName=$env" \
-            "KafkaClientInstanceSecurityGroup=$msk_info_client_group_id" \
-            "BootstrapServers=$msk_info_brokers" \
-            "ZookeeperServers=$msk_info_zookeepers"
+            "EnvironmentName=$env"
     fi
 
     wait_stack_status_up $stack 50 1
@@ -97,13 +93,10 @@ function create_schema_registry(){
             "Cluster=$ecs_cluster" \
             "KafkaClientInstanceSecurityGroup=$msk_info_client_group_id" \
             "BootstrapServers=$msk_info_brokers" \
-            "ZookeeperServers=$msk_info_zookeepers" \
             "PrivateNamespaceId=$ecs_private_ns"
     fi
 
     wait_stack_status_up $stack 50 1
-
-
 }
 
 function create_kafka_connect(){
@@ -121,7 +114,6 @@ function create_kafka_connect(){
             "Cluster=$ecs_cluster" \
             "KafkaClientInstanceSecurityGroup=$msk_info_client_group_id" \
             "BootstrapServers=$msk_info_brokers" \
-            "ZookeeperServers=$msk_info_zookeepers" \
             "PrivateNamespaceId=$ecs_private_ns"
     fi
 
@@ -136,7 +128,8 @@ function create_ssh(){
         aws cloudformation deploy --template-file $templates/ssh.template --stack-name $stack \
             --capabilities CAPABILITY_NAMED_IAM \
             --parameter-overrides "VPC=$vpc_id" \
-            "PrivateSubnets=${vpc_public_subnets}" \
+            "PublicSubnets=${vpc_public_subnets}" \
+            "PrivateSubnets=${vpc_private_subnets}" \
             "ExecutionRole=$exec_role" \
             "TaskRole=$task_role" \
             "Cluster=$ecs_cluster" \
@@ -183,7 +176,6 @@ function create_api(){
             "Cluster=$ecs_cluster" \
             "KafkaClientInstanceSecurityGroup=$msk_info_client_group_id" \
             "BootstrapServers=$msk_info_brokers" \
-            "ZookeeperServers=$msk_info_zookeepers" \
             "PrivateNamespaceId=$ecs_private_ns" \
             "AutoScalingRole=$ecs_autoscaling_role"
     fi
@@ -200,7 +192,7 @@ function create_app_provisioner(){
         echo_warn "There is no stack $stack in AWS CloudFormation"
         aws cloudformation deploy --template-file $templates/app-provisioner.template --stack-name $stack \
             --capabilities CAPABILITY_NAMED_IAM \
-            --parameter-overrides "VPC=$vpc_id" \
+            --parameter-overrides \
             "PrivateSubnets=${vpc_private_subnets}" \
             "ExecutionRole=$exec_role" \
             "TaskRole=$task_role" \
@@ -218,9 +210,9 @@ function create_app_provisioner(){
 create_vpc
 create_msk_cluster
 create_ecs_fargate
-create_schema_registry
-create_kafka_connect
+#create_schema_registry
+#create_kafka_connect
 #create_ssh
-create_sftp
-create_api
-create_app_provisioner
+#create_sftp
+#create_api
+#create_app_provisioner
