@@ -90,7 +90,6 @@ Resources:
           Fn::GetAtt:
             - VPC
             - Outputs.PrivateSubnets
-        ServiceName: !Sub 'schema-registry'
         ExecutionRole:
           Fn::GetAtt:
             - ECSCluster

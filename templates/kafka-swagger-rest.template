@@ -261,4 +261,4 @@ Resources:
 Outputs:
   Endpoint:
     Description: Endpoint
-    Value: !Join ['', ['http://', !GetAtt LoadBalancer.DNSName]]
+    Value: !Join ['', ['http://', !GetAtt LoadBalancer.DNSName, '/swagger/']]
