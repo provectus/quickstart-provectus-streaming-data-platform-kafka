@@ -13,7 +13,7 @@ Parameters:
   Image:
     Type: String
     # Update with the Docker image. "You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag)."
-    Default: provectuslabs/kafka-swagger-rest:1cc5433
+    Default: provectuslabs/kafka-swagger-rest:b2065de
   ServiceName:
     Type: String
     # update with the name of the service
