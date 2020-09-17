@@ -17,7 +17,7 @@ Parameters:
     Default: walkins,bids,impressions,clicks,aggregates,events,visits
   Image:
     Type: String
-    Default: provectuslabs/sdp-kafka-quickstart-provisioner
+    Default: provectuslabs/sdp-kafka-quickstart-provisioner:latest
   ExecutionRole:
     Type: String
   TaskRole:

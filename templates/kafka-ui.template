@@ -120,7 +120,7 @@ Resources:
             - ContainerPort: !Ref ContainerPort
           Environment:
             - Name: KAFKA_CLUSTERS_0_NAME
-              Value: !Ref Cluster
+              Value: !Ref EnvironmentName
             - Name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
               Value: !Ref BootstrapServers
             - Name: KAFKA_CLUSTERS_0_ZOOKEEPER
