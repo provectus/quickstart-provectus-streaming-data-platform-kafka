@@ -13,11 +13,11 @@ Parameters:
   Image:
     Type: String
     # Update with the Docker image. "You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag)."
-    Default: provectuslabs/kafka-swagger-rest:b2065de
+    Default: provectuslabs/kafka-ui:latest
   ServiceName:
     Type: String
     # update with the name of the service
-    Default: api
+    Default: kafka-ui
   TaskRole:
     Type: String
   ExecutionRole:
@@ -34,7 +34,7 @@ Parameters:
     Default: 80
   HealthCheckPath:
     Type: String
-    Default: /swagger/swagger-ui.html
+    Default: /ui
   # for autoscaling
   MinContainers:
     Type: Number
@@ -47,12 +47,13 @@ Parameters:
   AutoScalingTargetValue:
     Type: Number
     Default: 50
-
   KafkaClientInstanceSecurityGroup:
     Type: String
   BootstrapServers:
     Type: String
   PrivateNamespaceId:
+    Type: String
+  ZookeeperAddress:
     Type: String
 
 Resources:
@@ -118,14 +119,14 @@ Resources:
           PortMappings:
             - ContainerPort: !Ref ContainerPort
           Environment:
-            - Name: SWAGGER_KAFKA_0_BOOTSTRAPSERVERS
+            - Name: KAFKA_CLUSTERS_0_NAME
+              Value: !Ref EnvironmentName
+            - Name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
               Value: !Ref BootstrapServers
-            - Name: SWAGGER_KAFKA_0_GROUPNAME
-              Value: !Join ['-', [!Ref ServiceName, group, !Ref EnvironmentName]]
-            - Name: SWAGGER_KAFKA_0_SCHEMAREGISTRYURL
-              Value: http://schema-registry.sdp.local:8081
-            - Name: SWAGGER_KAFKA_0_IGNORETOPICS
-              Value: kafka-connect-connect-configs,kafka-connect-connect-offsets,kafka-connect-connect-status
+            - Name: KAFKA_CLUSTERS_0_ZOOKEEPER
+              Value: !Ref ZookeeperAddress
+            - Name: KAFKA_CLUSTERS_0_SCHEMAREGISTRY
+              Value: http://schema-registry.sdp.local:8081 
 
           # Send logs to CloudWatch Logs
           LogConfiguration:
@@ -244,7 +245,7 @@ Resources:
   DiscoveryService:
     Type: AWS::ServiceDiscovery::Service
     Properties:
-      Description: Discovery Service for the Kafka Swagger Rest
+      Description: Discovery Service for the Kafka UI
       DnsConfig:
         RoutingPolicy: MULTIVALUE
         DnsRecords:
@@ -254,11 +255,11 @@ Resources:
             Type: SRV
       HealthCheckCustomConfig:
         FailureThreshold: 1
-      Name: api
+      Name: kafka-ui
       NamespaceId:
         !Ref PrivateNamespaceId
 
 Outputs:
   Endpoint:
     Description: Endpoint
-    Value: !Join ['', ['http://', !GetAtt LoadBalancer.DNSName, '/swagger/']]
+    Value: !Join ['', ['http://', !GetAtt LoadBalancer.DNSName]]

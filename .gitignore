@@ -45,3 +45,6 @@ taskcat_outputs/
 /ci/
 nohup.out
 /templates/ssh.template
+
+#CloudFormation visualization plugin
+.dot

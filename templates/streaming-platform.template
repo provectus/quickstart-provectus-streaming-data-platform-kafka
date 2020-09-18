@@ -90,7 +90,6 @@ Resources:
           Fn::GetAtt:
             - VPC
             - Outputs.PrivateSubnets
-        ServiceName: !Sub 'schema-registry-${EnvironmentName}'
         ExecutionRole:
           Fn::GetAtt:
             - ECSCluster
@@ -250,3 +249,55 @@ Resources:
             - ECSCluster
             - Outputs.PrivateNamespaceId
 
+  KafkaUI:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-ui.template'
+        Parameters:
+          VPC:
+            Fn::GetAtt:
+              - VPC
+              - Outputs.VPC
+          PublicSubnets:
+            Fn::GetAtt:
+              - VPC
+              - Outputs.PublicSubnets
+          PrivateSubnets:
+            Fn::GetAtt:
+              - VPC
+              - Outputs.PrivateSubnets
+          EnvironmentName:
+            Ref: EnvironmentName
+          ExecutionRole:
+            Fn::GetAtt:
+              - ECSCluster
+              - Outputs.ExecutionRole
+          TaskRole:
+            Fn::GetAtt:
+              - ECSCluster
+              - Outputs.TaskRole
+          Cluster:
+            Fn::GetAtt:
+              - ECSCluster
+              - Outputs.Cluster
+          KafkaClientInstanceSecurityGroup:
+            Fn::GetAtt:
+              - MSKClusterStack
+              - Outputs.KafkaClientInstanceSecurityGroupID
+          BootstrapServers:
+            Fn::GetAtt:
+              - MSKClusterStack
+              - Outputs.MskBrokers
+          ZookeeperAddress:
+            Fn::GetAtt:
+              - MSKClusterStack
+              - Outputs.MskZookeepers
+          AutoScalingRole:
+            Fn::GetAtt:
+              - ECSCluster
+              - Outputs.AutoScalingRole
+          PrivateNamespaceId:
+            Fn::GetAtt:
+              - ECSCluster
+              - Outputs.PrivateNamespaceId
+    
