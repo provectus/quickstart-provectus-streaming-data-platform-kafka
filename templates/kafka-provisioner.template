@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Kafka Provisioner. Creates kafka topics based on API requests, schemas and connectors.
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+  QSS3BucketName:
+    Type: String
+  BootstrapServers:
+    Type: String
+  PrivateSubnets:
+    Type: CommaDelimitedList
+  KafkaClientInstanceSecurityGroup:
+    Type: String
+
+Resources:
+  KafkaProvisionerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: Logs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: AllowAssignIP
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeInstances
+                  - ec2:AttachNetworkInterface
+                Resource: "*"
+              
+  KafkaTopicsProvisioner:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Create Kafka topics based on API request
+      Role: !GetAtt KafkaProvisionerRole.Arn
+      Runtime: python3.8
+      Handler: create_topics.lambda_handler
+      MemorySize: 128
+      FunctionName: !Sub '${EnvironmentName}-CreateKafkaTopics'
+      Code:
+        S3Bucket: !Ref QSS3BucketName
+        S3Key: sdp-kafka/docker/provisioner/topics/create_topics.zip
+      Environment:
+        Variables:
+          BootstrapServers: !Ref 'BootstrapServers'
+      VpcConfig:
+        SubnetIds: !Ref PrivateSubnets
+        SecurityGroupIds: 
+          - !Ref KafkaClientInstanceSecurityGroup
+
+  InvokeTopicsProvisionerWalkins:
+    Type: Custom::InvokeTopicsProvisionerWalkins
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      'Fn::Transform':
+        Name: 'AWS::Include'
+        Parameters:
+          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_walkins.json'
+      Cause: ''
+      Status: ''
+  
+  InvokeTopicsProvisionerClicks:
+    Type: Custom::InvokeTopicsProvisionerClicks
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      'Fn::Transform':
+        Name: 'AWS::Include'
+        Parameters:
+          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_clicks.json'
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsProvisionerVisits:
+    Type: Custom::InvokeTopicsProvisionerVisits
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      'Fn::Transform':
+        Name: 'AWS::Include'
+        Parameters:
+          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_visits.json'
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsProvisionerImpressions:
+    Type: Custom::InvokeTopicsProvisionerImpressions
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      'Fn::Transform':
+        Name: 'AWS::Include'
+        Parameters:
+          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_impressions.json'
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsProvisionerEvents:
+    Type: Custom::InvokeTopicsProvisionerEvents
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      'Fn::Transform':
+        Name: 'AWS::Include'
+        Parameters:
+          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_events.json'
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsProvisionerBids:
+    Type: Custom::InvokeTopicsProvisionerBids
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      'Fn::Transform':
+        Name: 'AWS::Include'
+        Parameters:
+          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_bids.json'
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsProvisionerAggregates:
+    Type: Custom::InvokeTopicsProvisionerAggregates
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      'Fn::Transform':
+        Name: 'AWS::Include'
+        Parameters:
+          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_aggregates.json'
+      Cause: ''
+      Status: ''

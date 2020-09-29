@@ -26,6 +26,8 @@ Parameters:
     Type: String
   PrivateNamespaceId:
     Type: String
+  PrivateNamespaceName:
+    Type: String
 
 Resources:
 
@@ -112,3 +114,13 @@ Resources:
         FailureThreshold: 1
       Name: !Ref ServiceName
       NamespaceId: !Ref PrivateNamespaceId
+
+Outputs:
+  SchemaRegistryURI:
+    Description: The DNS name of Discovery service, you can use this name to access SchemaRegistry
+    Value: !Sub 'http://${ServiceName}.${PrivateNamespaceName}:${ContainerPort}'
+  SchemaRegistryClientSG:
+    Description: The security group of SchemaRegistryService
+    Value: !GetAtt 
+      - ContainerSecurityGroup
+      - GroupId

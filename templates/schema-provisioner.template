@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Schema Provisioner. Register schema of messages for topic-value in schema registry.
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+  QSS3BucketName:
+    Type: String
+  SchemaRegistryAddress:
+    Type: String
+  PrivateSubnets:
+    Type: CommaDelimitedList
+  KafkaClientInstanceSecurityGroup:
+    Type: String
+  SchemaRegistrySecurityGroup:
+    Type: String
+
+Resources:
+  SchemaProvisionerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: Logs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: AllowAssignIP
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeInstances
+                  - ec2:AttachNetworkInterface
+                Resource: "*"
+        - PolicyName: AllowReadFromS3Bucket
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  !Sub 'arn:aws:s3:::${QSS3BucketName}/*'
+
+
+  SchemaProvisioner:
+    Type: AWS::Lambda::Function
+    Properties:
+      Timeout: 900
+      Description: Add schema to KafkaSchemaRregistry
+      Role: !GetAtt SchemaProvisionerRole.Arn
+      Runtime: python3.7
+      Handler: create_schema.lambda_handler
+      MemorySize: 128
+      FunctionName: !Sub '${EnvironmentName}-AddSchema'
+      Code:
+        S3Bucket: !Ref QSS3BucketName
+        S3Key: sdp-kafka/docker/provisioner/schemas/schemas.zip
+      Environment:
+        Variables:
+          SchemaRegistryURI: !Ref 'SchemaRegistryAddress'
+          need_just_trigger_update_lamdba: 1
+      VpcConfig:
+        SubnetIds: !Ref PrivateSubnets
+        SecurityGroupIds:
+          - !Ref KafkaClientInstanceSecurityGroup
+          - !Ref SchemaRegistrySecurityGroup
+
+  InvokeSchemaProvisionerBids:
+    Type: Custom::InvokeSchemaProvisionerBids
+    Properties:
+      ServiceToken: !GetAtt SchemaProvisioner.Arn
+      SchemaFile: 'sdp-kafka/docker/provisioner/avro/bids.avsc'
+      S3Bucket: !Ref QSS3BucketName
+      TopicName: 'bids'
+      status: ''
+      cause: ''
+
+  InvokeSchemaProvisionerClicks:
+    Type: Custom::InvokeSchemaProvisionerClicks
+    Properties:
+      ServiceToken: !GetAtt SchemaProvisioner.Arn
+      SchemaFile: 'sdp-kafka/docker/provisioner/avro/clicks.avsc'
+      S3Bucket: !Ref QSS3BucketName
+      TopicName: 'clicks'
+      status: ''
+      cause: ''
+
+  InvokeSchemaProvisionerImpressions:
+    Type: Custom::InvokeSchemaProvisionerImpressions
+    Properties:
+      ServiceToken: !GetAtt SchemaProvisioner.Arn
+      SchemaFile: 'sdp-kafka/docker/provisioner/avro/impressions.avsc'
+      S3Bucket: !Ref QSS3BucketName
+      TopicName: 'impressions'
+      status: ''
+      cause: ''
+
+  InvokeSchemaProvisionerVisits:
+    Type: Custom::InvokeSchemaProvisionerVisits
+    Properties:
+      ServiceToken: !GetAtt SchemaProvisioner.Arn
+      SchemaFile: 'sdp-kafka/docker/provisioner/avro/visits.avsc'
+      S3Bucket: !Ref QSS3BucketName
+      TopicName: 'visits'
+      status: ''
+      cause: ''

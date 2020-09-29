@@ -1,7 +1,7 @@
 {
   "type": "record",
   "namespace": "com.provectus.fds.avro",
-  "name": "Location",
+  "name": "locations",
   "version": "1",
   "fields": [
     { "name": "app_uid", "type": "string" },

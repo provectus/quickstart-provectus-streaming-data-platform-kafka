@@ -79,6 +79,7 @@ Resources:
 
   SchemaRegistry:
     Type: AWS::CloudFormation::Stack
+    DependsOn: MSKClusterStack    
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/schema-registry.template'
       Parameters:
@@ -114,6 +115,10 @@ Resources:
           Fn::GetAtt:
             - ECSCluster
             - Outputs.PrivateNamespaceId
+        PrivateNamespaceName:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.PrivateNamespaceName          
 
   KafkaConnect:
     Type: AWS::CloudFormation::Stack
@@ -169,6 +174,9 @@ Resources:
 
   KafkaSwaggerRest:
     Type: AWS::CloudFormation::Stack
+    DependsOn: 
+      - ProvisionSchemaStack
+      - KafkaTopicsStack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-swagger-rest.template'
       Parameters:
@@ -215,42 +223,11 @@ Resources:
             - ECSCluster
             - Outputs.PrivateNamespaceId
 
-  AppProvisioner:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/app-provisioner.template'
-      Parameters:
-        PrivateSubnets:
-          Fn::GetAtt:
-            - VPC
-            - Outputs.PrivateSubnets
-        ExecutionRole:
-          Fn::GetAtt:
-            - ECSCluster
-            - Outputs.ExecutionRole
-        TaskRole:
-          Fn::GetAtt:
-            - ECSCluster
-            - Outputs.TaskRole
-        Cluster:
-          Fn::GetAtt:
-            - ECSCluster
-            - Outputs.Cluster
-        KafkaClientInstanceSecurityGroup:
-          Fn::GetAtt:
-            - MSKClusterStack
-            - Outputs.KafkaClientInstanceSecurityGroupID
-        BootstrapServers:
-          Fn::GetAtt:
-            - MSKClusterStack
-            - Outputs.MskBrokers
-        PrivateNamespaceId:
-          Fn::GetAtt:
-            - ECSCluster
-            - Outputs.PrivateNamespaceId
-
   KafkaUI:
       Type: AWS::CloudFormation::Stack
+      DependsOn: 
+        - ProvisionSchemaStack
+        - KafkaTopicsStack
       Properties:
         TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-ui.template'
         Parameters:
@@ -301,3 +278,52 @@ Resources:
               - ECSCluster
               - Outputs.PrivateNamespaceId
     
+  KafkaTopicsStack:
+    DependsOn: MSKClusterStack
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-provisioner.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        QSS3BucketName:
+          Ref: QSS3BucketName
+        BootstrapServers: 
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.MskBrokers
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.KafkaClientInstanceSecurityGroupID
+
+  ProvisionSchemaStack:
+    DependsOn: SchemaRegistry
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/schema-provisioner.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        QSS3BucketName:
+          Ref: QSS3BucketName
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        SchemaRegistryAddress:
+          Fn::GetAtt:
+            - SchemaRegistry
+            - Outputs.SchemaRegistryURI
+        SchemaRegistrySecurityGroup:
+          Fn::GetAtt:
+            - SchemaRegistry
+            - Outputs.SchemaRegistryClientSG
