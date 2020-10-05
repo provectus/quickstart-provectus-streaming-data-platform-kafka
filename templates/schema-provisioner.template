@@ -76,8 +76,7 @@ Resources:
         S3Key: sdp-kafka/docker/provisioner/schemas/schemas.zip
       Environment:
         Variables:
-          SchemaRegistryURI: !Ref 'SchemaRegistryAddress'
-          need_just_trigger_update_lamdba: 1
+          SCHEMA_REEGISTRY_URI: !Ref 'SchemaRegistryAddress'
       VpcConfig:
         SubnetIds: !Ref PrivateSubnets
         SecurityGroupIds:
@@ -88,9 +87,15 @@ Resources:
     Type: Custom::InvokeSchemaProvisionerBids
     Properties:
       ServiceToken: !GetAtt SchemaProvisioner.Arn
-      SchemaFile: 'sdp-kafka/docker/provisioner/avro/bids.avsc'
-      S3Bucket: !Ref QSS3BucketName
-      TopicName: 'bids'
+      SchemaConfig: "{\"type\":\"record\",\"namespace\":\"com.provectus.fds.avro\",\"name\":\"bids\",
+        \"version\":\"1\",\"fields\":[{\"name\":\"app_uid\",\"type\":\"string\"},
+        {\"name\":\"campaign_item_id\",\"type\":\"int\"},
+        {\"name\":\"creative_category\",\"type\":[\"null\",\"string\"],\"default\":null},
+        {\"name\":\"creative_id\",\"type\":[\"null\",\"string\"],\"default\":null},
+        {\"name\":\"tx_id\",\"type\":\"string\"},
+        {\"name\":\"domain\",\"type\":[\"null\",\"string\"],\"default\":null},
+        {\"name\":\"win_price\",\"type\":\"int\"},
+        {\"name\":\"type\",\"type\":\"string\",\"default\":\"bid\"}]}"
       status: ''
       cause: ''
 
@@ -98,9 +103,9 @@ Resources:
     Type: Custom::InvokeSchemaProvisionerClicks
     Properties:
       ServiceToken: !GetAtt SchemaProvisioner.Arn
-      SchemaFile: 'sdp-kafka/docker/provisioner/avro/clicks.avsc'
-      S3Bucket: !Ref QSS3BucketName
-      TopicName: 'clicks'
+      SchemaConfig: "{\"type\":\"record\",\"namespace\":\"com.provectus.fds.avro\",\"name\":\"clicks\",
+      \"version\":\"1\",\"fields\":[{\"name\":\"tx_id\",\"type\":\"string\"},
+      {\"name\":\"type\",\"type\":\"string\",\"default\":\"click\"}]}"
       status: ''
       cause: ''
 
@@ -108,9 +113,10 @@ Resources:
     Type: Custom::InvokeSchemaProvisionerImpressions
     Properties:
       ServiceToken: !GetAtt SchemaProvisioner.Arn
-      SchemaFile: 'sdp-kafka/docker/provisioner/avro/impressions.avsc'
-      S3Bucket: !Ref QSS3BucketName
-      TopicName: 'impressions'
+      SchemaConfig: "{\"type\":\"record\",\"namespace\":\"com.provectus.fds.avro\",\"name\":\"impressions\",
+        \"version\":\"1\",\"fields\":[{\"name\":\"tx_id\",\"type\":\"string\"},
+        {\"name\":\"win_price\",\"type\":\"int\"},
+        {\"name\":\"type\",\"type\":\"string\",\"default\":\"imp\"}]}"
       status: ''
       cause: ''
 
@@ -118,8 +124,10 @@ Resources:
     Type: Custom::InvokeSchemaProvisionerVisits
     Properties:
       ServiceToken: !GetAtt SchemaProvisioner.Arn
-      SchemaFile: 'sdp-kafka/docker/provisioner/avro/visits.avsc'
-      S3Bucket: !Ref QSS3BucketName
-      TopicName: 'visits'
+      SchemaConfig: "{\"type\":\"record\",\"namespace\":\"com.provectus.fds.avro\",\"name\":\"visits\",
+        \"version\":\"1\",\"fields\":[{\"name\":\"app_uid\",\"type\":\"string\"},
+        {\"name\":\"timestamp\",\"type\":\"long\"},
+        {\"name\":\"longitude\",\"type\":\"double\"},
+        {\"name\":\"latitude\",\"type\":\"double\"}]}"
       status: ''
       cause: ''

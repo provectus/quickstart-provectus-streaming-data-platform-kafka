@@ -62,7 +62,7 @@ Resources:
         S3Key: sdp-kafka/docker/provisioner/topics/create_topics.zip
       Environment:
         Variables:
-          BootstrapServers: !Ref 'BootstrapServers'
+          BOOTSTRAP_SERVERS: !Ref 'BootstrapServers'
       VpcConfig:
         SubnetIds: !Ref PrivateSubnets
         SecurityGroupIds: 
@@ -72,21 +72,21 @@ Resources:
     Type: Custom::InvokeTopicsProvisionerWalkins
     Properties:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      'Fn::Transform':
-        Name: 'AWS::Include'
-        Parameters:
-          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_walkins.json'
+      KafkaTopic: 
+        name: walkins
+        num_partitions: 1
+        replication_factor: 1
       Cause: ''
       Status: ''
-  
+
   InvokeTopicsProvisionerClicks:
     Type: Custom::InvokeTopicsProvisionerClicks
     Properties:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      'Fn::Transform':
-        Name: 'AWS::Include'
-        Parameters:
-          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_clicks.json'
+      KafkaTopic: 
+        name: visits
+        num_partitions: 1
+        replication_factor: 1
       Cause: ''
       Status: ''
 
@@ -94,10 +94,10 @@ Resources:
     Type: Custom::InvokeTopicsProvisionerVisits
     Properties:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      'Fn::Transform':
-        Name: 'AWS::Include'
-        Parameters:
-          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_visits.json'
+      KafkaTopic: 
+        name: impressions
+        num_partitions: 1
+        replication_factor: 1
       Cause: ''
       Status: ''
 
@@ -105,10 +105,10 @@ Resources:
     Type: Custom::InvokeTopicsProvisionerImpressions
     Properties:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      'Fn::Transform':
-        Name: 'AWS::Include'
-        Parameters:
-          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_impressions.json'
+      KafkaTopic: 
+        name: events
+        num_partitions: 1
+        replication_factor: 1
       Cause: ''
       Status: ''
 
@@ -116,10 +116,10 @@ Resources:
     Type: Custom::InvokeTopicsProvisionerEvents
     Properties:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      'Fn::Transform':
-        Name: 'AWS::Include'
-        Parameters:
-          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_events.json'
+      KafkaTopic: 
+        name: clicks
+        num_partitions: 1
+        replication_factor: 1
       Cause: ''
       Status: ''
 
@@ -127,10 +127,10 @@ Resources:
     Type: Custom::InvokeTopicsProvisionerBids
     Properties:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      'Fn::Transform':
-        Name: 'AWS::Include'
-        Parameters:
-          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_bids.json'
+      KafkaTopic: 
+        name: bids
+        num_partitions: 1
+        replication_factor: 1
       Cause: ''
       Status: ''
 
@@ -138,9 +138,9 @@ Resources:
     Type: Custom::InvokeTopicsProvisionerAggregates
     Properties:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      'Fn::Transform':
-        Name: 'AWS::Include'
-        Parameters:
-          Location: !Sub 's3://${QSS3BucketName}/sdp-kafka/docker/provisioner/topics/topic_aggregates.json'
+      KafkaTopic: 
+        name: aggregates
+        num_partitions: 1
+        replication_factor: 1
       Cause: ''
       Status: ''

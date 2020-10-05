@@ -9,8 +9,8 @@ def lambda_handler(event, context):
     print ("Request body is:", event)
     if event['RequestType'] == 'Create':
         bootstrap_uri = "Bootstrap servers not provided in env"
-        if 'BootstrapServers' in os.environ:
-            bootstrap_uri = os.environ['BootstrapServers']
+        if 'BOOTSTRAP_SERVERS' in os.environ:
+            bootstrap_uri = os.environ['BOOTSTRAP_SERVERS']
             print(bootstrap_uri)
         else: 
             print(bootstrap_uri)
@@ -19,18 +19,18 @@ def lambda_handler(event, context):
 
         try:
             admin_client = KafkaAdminClient(bootstrap_servers=bootstrap_uri, 
-                client_id='test')
+                client_id='lambda')
         except Exception as e:
             responseData['status'] = "Failed to make KafkaAdmin Client, posssible reasons:bootstrap server name not resolvable, \
             bootsrap servers not reacheable, MSK cluster not running"
             print(e)
             cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
 
-        if 'kafka_topic' in event['ResourceProperties']:
+        if 'KafkaTopic' in event['ResourceProperties']:
             topic_list = []
-            topic_list.append(NewTopic(name=event['ResourceProperties']['kafka_topic']['name'], 
-                    num_partitions=int(event['ResourceProperties']['kafka_topic']['num_partitions']), 
-                    replication_factor=int(event['ResourceProperties']['kafka_topic']['replication_factor'])))
+            topic_list.append(NewTopic(name=event['ResourceProperties']['KafkaTopic']['name'], 
+                    num_partitions=int(event['ResourceProperties']['KafkaTopic']['num_partitions']), 
+                    replication_factor=int(event['ResourceProperties']['KafkaTopic']['replication_factor'])))
             try:
                 admin_client.create_topics(new_topics=topic_list, validate_only=False)
                 responseData['status'] = "Topic created successfully"
@@ -41,7 +41,7 @@ def lambda_handler(event, context):
                 responseData['cause'] = e
                 responseStatus = cfnresponse.FAILED
         else: 
-            responseData['cause'] = 'Failed to create topics, no kafka_topic provided'
+            responseData['cause'] = 'Failed to create topics, no KafkaTopic provided'
             responseStatus = cfnresponse.FAILED
 
         cfnresponse.send(event, context, responseStatus, responseData)
