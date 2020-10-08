@@ -1,0 +1,3 @@
+requests
+cfnresponse
+python-schema-registry-client==1.6.0

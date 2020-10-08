@@ -48,3 +48,6 @@ nohup.out
 
 #CloudFormation visualization plugin
 .dot
+
+#VSCODE
+.vscode
