@@ -5,9 +5,8 @@ WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd $WORKDIR
 rm -rf .dependencies
 mkdir .dependencies
-pipenv clean
-pipenv run \
-pip install -r requirements.txt  -t .dependencies && \
+pipenv lock --requirements > requirements.txt
+pipenv run pip install -r requirements.txt  -t .dependencies
 cp *.py .dependencies && \
 cd .dependencies && \
 zip -r ../schemas.zip . && \

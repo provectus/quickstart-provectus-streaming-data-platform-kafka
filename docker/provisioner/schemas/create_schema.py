@@ -42,7 +42,7 @@ def lambda_handler(event, context):
             print("Native http rest response, list of current subjects {}, \
                 ".format(list_registered_subjects.json()))
             try:
-                schema_id = client.register(json_content['name'] + "-value", avro_schema, timeout=2)
+                schema_id = client.register(json_content['name'] + "-value", avro_schema, timeout=5)
                 responseData['cause'] = "Schema {} created successfully, schema id is {} \
                     ".format(json_content['name'], schema_id)
                 print(responseData['cause'])

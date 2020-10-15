@@ -60,6 +60,46 @@ Resources:
               StringLike:
                 's3:prefix': 'input/*'
 
+  S3SinkAccessPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        ManagedPolicyName: !Sub 'S3SinkAccessPolicy-${EnvironmentName}'
+        Description: Access policy for Kafka Sink Connectors 
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - 
+              Effect: Allow
+              Action:
+                - 's3:ListAllMyBuckets'
+              Resource:
+                - 'arn:aws:s3:::*'
+            -
+              Effect: Allow
+              Action:
+                - 's3:PutObject'
+                - 's3:GetObject'
+                - 's3:DeleteObject'
+                - 's3:AbortMultipartUpload'
+                - 's3:ListMultipartUploadParts'
+                - 's3:ListBucketMultipartUploads'
+              Resource:
+                !Sub
+                - 'arn:aws:s3:::${Bucket}/sink/*'
+                - { Bucket: !Ref S3Bucket }
+            -
+              Effect: Allow
+              Action:
+                - 's3:ListBucket'
+                - 's3:GetBucketLocation'
+              Resource:
+                !Sub
+                - 'arn:aws:s3:::${Bucket}'
+                - { Bucket: !Ref S3Bucket }
+              Condition:
+                StringLike:
+                  's3:prefix': 'sink/*'  
+
   SftpAccessRole:
     Type: AWS::IAM::Role
     Properties:
@@ -89,3 +129,19 @@ Resources:
       ServerId: !GetAtt SftpServer.ServerId
       SshPublicKeys:
         - !Ref PublicSshKey
+
+Outputs:
+  SftpAccessRole:
+    Description: SftpAccessRole
+    Value: !Ref SftpAccessRole
+  S3BucketArn:
+    Description: 'S3Bucker Arn'
+    Value: !GetAtt S3Bucket.Arn
+  SinkAccessPolicy:
+    Description: SinkAccessPolicy
+    Value: !Ref S3SinkAccessPolicy
+  BacketName:
+    Description: Bucket name needed for Kafka Sink Connector
+    Value: !If [HasBucketName, !Ref BucketName, !Sub 'sdp-input-bucket-${EnvironmentName}']
+  RegionalBacketName:
+    Value: !GetAtt S3Bucket.RegionalDomainName

@@ -10,6 +10,9 @@ Parameters:
     Type: String
     Default: sdp.local
     Description: Private namespace for ServiceDiscovery
+  SinkAccessPolicy:
+    Type: String
+    Description: PolicyForSinkKafkaConnectors
 
 Resources:
 
@@ -49,10 +52,9 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: 'sts:AssumeRole'
-      # ManagedPolicyArns:
-      #   -
-      # Policies:
-      #   -
+      ManagedPolicyArns: 
+        - !Ref SinkAccessPolicy
+
 
   # A role needed for auto scaling
   AutoScalingRole:
@@ -69,7 +71,6 @@ Resources:
         - 'arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole'
 
 Outputs:
-
   ExecutionRole:
     Description: ECS ExecutionRole
     Value: !GetAtt ExecutionRole.Arn

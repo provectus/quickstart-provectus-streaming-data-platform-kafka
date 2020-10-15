@@ -1,0 +1,30 @@
+
+{
+  "RequestType": "Update",
+  "ResponseURL": "http://pre-signed-S3-url-for-response",
+  "StackId": "arn:aws:cloudformation:us-west-2:123456789012:stack/MyStack/guid",
+  "RequestId": "unique id for this create request",
+  "ResourceType": "Custom::TestResource",
+  "LogicalResourceId": "MyTestResource",
+  "ResourceProperties": 
+  {
+    "connector_definition": {
+      "name": "s3-sink",
+      "config": {
+        "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+        "tasks.max": "1",
+        "topics": "bids, clicks, walkins",
+        "s3.region": "us-west-2",
+        "s3.bucket.name": "sdp-input-bucket-test1",
+        "s3.part.size": "5242880",
+        "flush.size": "3",
+        "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+        "format.class": "io.confluent.connect.s3.format.json.JsonFormat",
+        "partitioner.class": "io.confluent.connect.storage.partitioner.DefaultPartitioner",
+        "schema.compatibility": "NONE",
+        "topics.dir": "sink"
+      } 
+    }
+  }
+}
+  

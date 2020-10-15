@@ -36,6 +36,11 @@ Parameters:
     Type: String
     Default: kafka.m5.large
     Description: Broker instance type
+  
+  KafkaConnectServiceName:
+    Type: String
+    Default: kafka-connect
+    Description: Kafka connect service name, usually you don't need to change it
 
 Resources:
 
@@ -76,6 +81,11 @@ Resources:
             - Outputs.VPC
         EnvironmentName:
           Ref: EnvironmentName
+        SinkAccessPolicy:  
+          Fn::GetAtt:
+            - SFTP
+            - Outputs.SinkAccessPolicy
+
 
   SchemaRegistry:
     Type: AWS::CloudFormation::Stack
@@ -134,7 +144,7 @@ Resources:
             - VPC
             - Outputs.PrivateSubnets
         ServiceName: !Sub 'kafka-connect-${EnvironmentName}'
-        SchemaRegistryUrl: !Sub 'http://schema-registry-${EnvironmentName}.sdp.local:8081'
+        SchemaRegistryUrl: 'http://schema-registry.sdp.local:8081'
         ExecutionRole:
           Fn::GetAtt:
             - ECSCluster
@@ -159,6 +169,11 @@ Resources:
           Fn::GetAtt:
             - ECSCluster
             - Outputs.PrivateNamespaceId
+        PrivateNamespaceName:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.PrivateNamespaceName   
+
 
   SFTP:
     Type: AWS::CloudFormation::Stack
@@ -300,6 +315,9 @@ Resources:
           Fn::GetAtt:
             - MSKClusterStack
             - Outputs.KafkaClientInstanceSecurityGroupID
+        KafkaConnectServiceName: 
+          Ref: KafkaConnectServiceName
+
 
   ProvisionSchemaStack:
     DependsOn: SchemaRegistry
@@ -327,3 +345,31 @@ Resources:
           Fn::GetAtt:
             - SchemaRegistry
             - Outputs.SchemaRegistryClientSG
+
+  ProvisionKafkaConnectors:
+    DependsOn: ProvisionSchemaStack
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-connect-provisioner.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        KafkaConnectEndpoint:
+          Fn::GetAtt: 
+            - KafkaConnect
+            - Outputs.EndPoint
+        QSS3BucketName:
+          Ref: QSS3BucketName
+        BacketName:
+          Fn::GetAtt: 
+            - SFTP
+            - Outputs.BacketName
+

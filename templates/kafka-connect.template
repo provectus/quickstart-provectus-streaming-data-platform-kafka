@@ -29,6 +29,8 @@ Parameters:
     Type: String
   PrivateNamespaceId:
     Type: String
+  PrivateNamespaceName:
+    Type: String
 
 Resources:
 
@@ -50,7 +52,6 @@ Resources:
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
-    DependsOn: LogGroup
     Properties:
       Family: !Join ['', [!Ref ServiceName, TaskDefinition]]
       NetworkMode: awsvpc
@@ -81,11 +82,11 @@ Resources:
             - Name: CONNECT_GROUP_ID
               Value: !Sub '${ServiceName}-connect-group'
             - Name: CONNECT_CONFIG_STORAGE_TOPIC
-              Value: !Sub '${ServiceName}-connect-configs'
+              Value: !Sub '${ServiceName}-configs'
             - Name: CONNECT_OFFSET_STORAGE_TOPIC
-              Value: !Sub '${ServiceName}-connect-offsets'
+              Value: !Sub '${ServiceName}-offsets'
             - Name: CONNECT_STATUS_STORAGE_TOPIC
-              Value: !Sub '${ServiceName}-connect-status'
+              Value: !Sub '${ServiceName}-status'
             - Name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
               Value: "3"
             - Name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR
@@ -149,3 +150,11 @@ Resources:
         FailureThreshold: 1
       Name: !Ref ServiceName
       NamespaceId: !Ref PrivateNamespaceId
+
+Outputs:
+  ServiceName: 
+    Description: KafkaConnectServiceName
+    Value: !Ref ServiceName
+  EndPoint: 
+    Description: Constructed KafkaConnectEndpoint, it needed for Connectors provisioner
+    Value: !Sub 'http://${ServiceName}.${PrivateNamespaceName}:${ContainerPort}'
