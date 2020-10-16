@@ -6,7 +6,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-kafka.admin = "2.0.*"
+kafka-python = ">=2.0,<=2.1"
 cfnresponse = "*"
 requests = "*"
 

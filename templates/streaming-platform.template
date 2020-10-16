@@ -89,7 +89,7 @@ Resources:
 
   SchemaRegistry:
     Type: AWS::CloudFormation::Stack
-    DependsOn: MSKClusterStack    
+    DependsOn: KafkaTopicsStack    
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/schema-registry.template'
       Parameters:

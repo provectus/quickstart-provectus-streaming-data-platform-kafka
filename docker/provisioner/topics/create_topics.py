@@ -1,4 +1,3 @@
-import json
 import os
 from kafka.admin import KafkaAdminClient, NewTopic
 import cfnresponse
@@ -6,6 +5,7 @@ import cfnresponse
 
 def lambda_handler(event, context):
     responseData = {}
+    responseStatus = cfnresponse.SUCCESS
     print ("Request body is:", event)
     if event['RequestType'] == 'Create':
         bootstrap_uri = "Bootstrap servers not provided in env"
@@ -34,18 +34,18 @@ def lambda_handler(event, context):
             try:
                 admin_client.create_topics(new_topics=topic_list, validate_only=False)
                 responseData['status'] = "Topic created successfully"
-                responseStatus = cfnresponse.SUCCESS
+                
             except Exception as e:
                 print("Failed to create topic:", e)
                 responseData['status'] = 'FAILED'
                 responseData['cause'] = e
-                responseStatus = cfnresponse.FAILED
+                cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
         else: 
             responseData['cause'] = 'Failed to create topics, no KafkaTopic provided'
             responseStatus = cfnresponse.FAILED
 
-        cfnresponse.send(event, context, responseStatus, responseData)
     else:
         #if event['RequestType'] == 'Delete' or event['RequestType'] == 'Update':
         responseData['cause'] = 'CloudFormation Delete and Update method not implemented, just return cnfresponse=SUCCSESS without any job/modifications'
-        cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+        responseStatus = cfnresponse.SUCCESS
+    cfnresponse.send(event, context, responseStatus, responseData)
