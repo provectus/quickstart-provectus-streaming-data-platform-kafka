@@ -1,0 +1,213 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Kafka Connect Provisioner. Execute KafkaConnectors by calling Lambda function.
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+  QSS3BucketName:
+    Type: String
+  PrivateSubnets:
+    Type: CommaDelimitedList
+  KafkaClientInstanceSecurityGroup:
+    Type: String
+  KafkaConnectEndpoint:
+    Type: String
+  BacketName:
+    Type: String
+
+Resources:
+  KafkaConnectProvisionerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: Logs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: AllowAssignIP
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeInstances
+                  - ec2:AttachNetworkInterface
+                Resource: "*"
+              
+  KafkaConnectProvisioner:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Run Kafka connector worker according payload
+      Role: !GetAtt KafkaConnectProvisionerRole.Arn
+      Runtime: python3.7
+      Handler: kafka_connector.lambda_handler
+      MemorySize: 128
+      FunctionName: !Sub '${EnvironmentName}-KafkaConnectProvisioner'
+      Code:
+        S3Bucket: !Ref QSS3BucketName
+        S3Key: sdp-kafka/docker/provisioner/connectors/kafka_connect_provisioner.zip
+      Environment:
+        Variables:
+          KAFKA_CONNECT_ENDPOINT: !Ref 'KafkaConnectEndpoint'
+          FUR_UPDATE: 'Please remove this,'
+      VpcConfig:
+        SubnetIds: !Ref PrivateSubnets
+        SecurityGroupIds: 
+          - !Ref KafkaClientInstanceSecurityGroup
+
+  CreateConnectorBids:
+    Type: Custom::CreateConnectorBids
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'S3Sink-bids-${EnvironmentName}'
+        config:
+          connector.class: 'io.confluent.connect.s3.S3SinkConnector'
+          tasks.max: '1'
+          topics: bids
+          s3.bucket.name: !Ref BacketName
+          s3.region: !Ref "AWS::Region"
+          s3.part.size: '5242880'
+          flush.size: '3'
+          storage.class: 'io.confluent.connect.s3.storage.S3Storage'
+          format.class: 'io.confluent.connect.s3.format.json.JsonFormat'
+          partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
+          schema.compatibility: 'NONE'
+          topics.dir: 'sink'
+
+
+  CreateConnectorClicks:
+    Type: Custom::CreateConnectorClicks
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'S3Sink-clicks-${EnvironmentName}'
+        config:
+          connector.class: 'io.confluent.connect.s3.S3SinkConnector'
+          tasks.max: '1'
+          topics: clicks
+          s3.bucket.name: !Ref BacketName
+          s3.region: !Ref "AWS::Region"
+          s3.part.size: '5242880'
+          flush.size: '3'
+          storage.class: 'io.confluent.connect.s3.storage.S3Storage'
+          format.class: 'io.confluent.connect.s3.format.json.JsonFormat'
+          partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
+          schema.compatibility: 'NONE'
+          topics.dir: 'sink'
+
+  CreateConnectorVisits:
+    Type: Custom::CreateConnectorVisits
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'S3Sink-visits-${EnvironmentName}'
+        config:
+          connector.class: 'io.confluent.connect.s3.S3SinkConnector'
+          tasks.max: '1'
+          topics: visits
+          s3.bucket.name: !Ref BacketName
+          s3.region: !Ref "AWS::Region"
+          s3.part.size: '5242880'
+          flush.size: '3'
+          storage.class: 'io.confluent.connect.s3.storage.S3Storage'
+          format.class: 'io.confluent.connect.s3.format.json.JsonFormat'
+          partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
+          schema.compatibility: 'NONE'
+          topics.dir: 'sink'
+
+  CreateConnectorWalkins:
+    Type: Custom::CreateConnectorWalkins
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'S3Sink-walkins-${EnvironmentName}'
+        config:
+          connector.class: 'io.confluent.connect.s3.S3SinkConnector'
+          tasks.max: '1'
+          topics: walkins
+          s3.bucket.name: !Ref BacketName
+          s3.region: !Ref "AWS::Region"
+          s3.part.size: '5242880'
+          flush.size: '3'
+          storage.class: 'io.confluent.connect.s3.storage.S3Storage'
+          format.class: 'io.confluent.connect.s3.format.json.JsonFormat'
+          partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
+          schema.compatibility: 'NONE'
+          topics.dir: 'sink'
+
+  CreateConnectorImpressions:
+    Type: Custom::CreateConnectorImpressions
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'S3Sink-impressions-${EnvironmentName}'
+        config:
+          connector.class: 'io.confluent.connect.s3.S3SinkConnector'
+          tasks.max: '1'
+          topics: impressions
+          s3.bucket.name: !Ref BacketName
+          s3.region: !Ref "AWS::Region"
+          s3.part.size: '5242880'
+          flush.size: '3'
+          storage.class: 'io.confluent.connect.s3.storage.S3Storage'
+          format.class: 'io.confluent.connect.s3.format.json.JsonFormat'
+          partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
+          schema.compatibility: 'NONE'
+          topics.dir: 'sink'
+
+  CreateConnectorAggregates:
+    Type: Custom::CreateConnectorAggregates
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'S3Sink-aggregates-${EnvironmentName}'
+        config:
+          connector.class: 'io.confluent.connect.s3.S3SinkConnector'
+          tasks.max: '1'
+          topics: aggregates
+          s3.bucket.name: !Ref BacketName
+          s3.region: !Ref "AWS::Region"
+          s3.part.size: '5242880'
+          flush.size: '3'
+          storage.class: 'io.confluent.connect.s3.storage.S3Storage'
+          format.class: 'io.confluent.connect.s3.format.json.JsonFormat'
+          partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
+          schema.compatibility: 'NONE'
+          topics.dir: 'sink'
+
+  CreateConnectorEvents:
+    Type: Custom::CreateConnectorEvents
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'S3Sink-events-${EnvironmentName}'
+        config:
+          connector.class: 'io.confluent.connect.s3.S3SinkConnector'
+          tasks.max: '1'
+          topics: events
+          s3.bucket.name: !Ref BacketName
+          s3.region: !Ref "AWS::Region"
+          s3.part.size: '5242880'
+          flush.size: '3'
+          storage.class: 'io.confluent.connect.s3.storage.S3Storage'
+          format.class: 'io.confluent.connect.s3.format.json.JsonFormat'
+          partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
+          schema.compatibility: 'NONE'
+          topics.dir: 'sink'

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: CloudFormation template for Kafka Swagger Rest service covered by ALB
+Description: CloudFormation template for Kafka UI covered by ALB
 Parameters:
   VPC:
     Type: String
@@ -87,7 +87,6 @@ Resources:
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     # Makes sure the log group is created before it is used.
-    DependsOn: LogGroup
     Properties:
       # Name of the task definition. Subsequent versions of the task definition are grouped together under this name.
       Family: !Join ['', [!Ref ServiceName, TaskDefinition]]

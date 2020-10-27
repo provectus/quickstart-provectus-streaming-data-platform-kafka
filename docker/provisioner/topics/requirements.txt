@@ -1,3 +1,13 @@
-requests
-kafka-python
-cfnresponse
+-i https://pypi.org/simple
+botocore==1.12.253
+certifi==2020.6.20
+cfnresponse==1.0.2
+chardet==3.0.4
+docutils==0.15.2; python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'
+idna==2.10; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'
+jmespath==0.10.0; python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'
+kafka-python==2.0.2
+python-dateutil==2.8.1; python_version >= '2.7'
+requests==2.24.0
+six==1.15.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'
+urllib3==1.25.10; python_version >= '3.4'

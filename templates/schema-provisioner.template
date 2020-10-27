@@ -64,7 +64,7 @@ Resources:
   SchemaProvisioner:
     Type: AWS::Lambda::Function
     Properties:
-      Timeout: 900
+      Timeout: 20
       Description: Add schema to KafkaSchemaRregistry
       Role: !GetAtt SchemaProvisionerRole.Arn
       Runtime: python3.7
