@@ -76,8 +76,8 @@ Resources:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
       KafkaTopic: 
         name: walkins
-        num_partitions: 1
-        replication_factor: 1
+        num_partitions: 4
+        replication_factor: 2
       Cause: ''
       Status: ''
 
@@ -87,8 +87,8 @@ Resources:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
       KafkaTopic: 
         name: visits
-        num_partitions: 1
-        replication_factor: 1
+        num_partitions: 4
+        replication_factor: 2
       Cause: ''
       Status: ''
 
@@ -98,8 +98,8 @@ Resources:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
       KafkaTopic: 
         name: impressions
-        num_partitions: 1
-        replication_factor: 1
+        num_partitions: 4
+        replication_factor: 2
       Cause: ''
       Status: ''
 
@@ -109,8 +109,8 @@ Resources:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
       KafkaTopic: 
         name: events
-        num_partitions: 1
-        replication_factor: 1
+        num_partitions: 4
+        replication_factor: 2
       Cause: ''
       Status: ''
 
@@ -120,8 +120,8 @@ Resources:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
       KafkaTopic: 
         name: clicks
-        num_partitions: 1
-        replication_factor: 1
+        num_partitions: 4
+        replication_factor: 2
       Cause: ''
       Status: ''
 
@@ -131,8 +131,8 @@ Resources:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
       KafkaTopic: 
         name: bids
-        num_partitions: 1
-        replication_factor: 1
+        num_partitions: 4
+        replication_factor: 2
       Cause: ''
       Status: ''
 
@@ -142,8 +142,52 @@ Resources:
       ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
       KafkaTopic: 
         name: aggregates
-        num_partitions: 1
-        replication_factor: 1
+        num_partitions: 4
+        replication_factor: 2
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsImpressionsKey:
+    Type: Custom::InvokeTopicsImpressionsKey
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      KafkaTopic: 
+        name: impressions-key
+        num_partitions: 4
+        replication_factor: 2
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsClicksKey:
+    Type: Custom::InvokeTopicsClicksKey
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      KafkaTopic: 
+        name: clicks-key
+        num_partitions: 4
+        replication_factor: 2
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsBidsKey:
+    Type: Custom::InvokeTopicsBidsKey
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      KafkaTopic: 
+        name: bids-key
+        num_partitions: 4
+        replication_factor: 2
+      Cause: ''
+      Status: ''
+
+  InvokeTopicsVisitsTemp:
+    Type: Custom::InvokeTopicsVisitsTemp
+    Properties:
+      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+      KafkaTopic: 
+        name: visits-temp
+        num_partitions: 4
+        replication_factor: 2
       Cause: ''
       Status: ''
 
