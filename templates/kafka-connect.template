@@ -82,11 +82,11 @@ Resources:
             - Name: CONNECT_GROUP_ID
               Value: !Sub '${ServiceName}-connect-group'
             - Name: CONNECT_CONFIG_STORAGE_TOPIC
-              Value: !Sub '${ServiceName}-configs'
+              Value: kafka-connect-configs
             - Name: CONNECT_OFFSET_STORAGE_TOPIC
-              Value: !Sub '${ServiceName}-offsets'
+              Value: kafka-connect-offsets
             - Name: CONNECT_STATUS_STORAGE_TOPIC
-              Value: !Sub '${ServiceName}-status'
+              Value: kafka-connect-status
             - Name: CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR
               Value: "3"
             - Name: CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR

@@ -373,3 +373,40 @@ Resources:
             - SFTP
             - Outputs.BacketName
 
+  KafkaEnricher:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/kafka-enricher.template'
+      Parameters:
+        PrivateSubnets:
+          Fn::GetAtt:
+            - VPC
+            - Outputs.PrivateSubnets
+        KafkaClientInstanceSecurityGroup:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.KafkaClientInstanceSecurityGroupID
+        SchemaRegistryAddress:
+          Fn::GetAtt:
+            - SchemaRegistry
+            - Outputs.SchemaRegistryURI
+        ExecutionRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.ExecutionRole
+        TaskRole:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.TaskRole
+        Cluster:
+          Fn::GetAtt:
+            - ECSCluster
+            - Outputs.Cluster
+        BootstrapServers:
+          Fn::GetAtt:
+            - MSKClusterStack
+            - Outputs.MskBrokers
+
+
+  
+

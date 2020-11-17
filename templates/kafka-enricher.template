@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: An CloudFormation template for Kafka Enricher
+Parameters:
+  ServiceName:
+    Type: String
+    Default: sdp-enricher
+  Image:
+    Type: String
+    Default: provectuslabs/sdp-kafka-enricher:1.0.3
+  PrivateSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+  ExecutionRole:
+    Type: String
+  TaskRole:
+    Type: String
+  Cluster:
+    Type: String
+  KafkaClientInstanceSecurityGroup:
+    Type: String
+  BootstrapServers:
+    Type: String
+  SchemaRegistryAddress:
+    Type: String
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['', [/ecs/, !Ref ServiceName, TaskDefinition]]
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Join ['', [!Ref ServiceName, TaskDefinition]]
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: "256"
+      Memory: 0.5GB
+      ExecutionRoleArn: !Ref ExecutionRole
+      TaskRoleArn: !Ref TaskRole
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Image: !Ref Image
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref LogGroup
+              awslogs-stream-prefix: ecs
+          Environment:
+            - Name: KAFKA_BOOTSTRAP_SERVERS
+              Value: !Ref BootstrapServers
+            - Name: SCHEMA_REGISTRY
+              Value: !Ref SchemaRegistryAddress          
+            - Name: TOPIC_BIDS
+              Value: bids
+            - Name: TOPIC_CLICKS
+              Value: clicks
+            - Name: TOPIC_IMPRESSIONS
+              Value: impressions
+            - Name: TOPIC_WALKINS
+              Value: walkins
+            - Name: TOPIC_WALKIN_CLICKS
+              Value: walkins
+            - Name: TOPIC_LOCATIONS
+              Value: visits
+            - Name: TOPIC_AGGREGATIONS
+              Value: aggregates
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            !Ref PrivateSubnets
+          SecurityGroups:
+            - !Ref KafkaClientInstanceSecurityGroup
+
+Outputs:
+  KafkaEnricherArn:
+    Description: The service definition in ECS
+    Value: !Ref Service
