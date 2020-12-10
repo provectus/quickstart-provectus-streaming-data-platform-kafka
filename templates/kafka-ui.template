@@ -13,7 +13,7 @@ Parameters:
   Image:
     Type: String
     # Update with the Docker image. "You can use images in the Docker Hub registry or specify other repositories (repository-url/image:tag)."
-    Default: provectuslabs/kafka-ui:latest
+    Default: provectuslabs/kafka-ui:0.0.7
   ServiceName:
     Type: String
     # update with the name of the service

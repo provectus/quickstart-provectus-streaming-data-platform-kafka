@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation template for Fargate.
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    
+Resources:
+  AggregationDynamoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: campaign_item_id
+            AttributeType: N
+          - AttributeName: period
+            AttributeType: N
+        KeySchema:
+          - AttributeName: campaign_item_id
+            KeyType: HASH
+          - AttributeName: period
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+  
+  DynamoDBAccessPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        ManagedPolicyName: !Sub 'DynamoDBAccessPolicy-${EnvironmentName}'
+        Description: Access policy for Kafka DynamoDB Connector
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamoDB:PutItem
+                - dynamoDB:UpdateItem
+                - dynamodb:BatchGetItem
+                - dynamoDB:Query
+                - dynamoDB:Scan
+                - dynamodb:BatchWriteItem
+              Resource:
+                - !GetAtt 'AggregationDynamoTable.Arn'
+  
+Outputs:
+  AggregationDynamoDB: 
+    Description: 'Ref AggregationDynamoDB'
+    Value: !Ref AggregationDynamoTable
+  DynamoDBAccessPolicy:
+    Description: 'AggregationDynamoDB Policy'
+    Value: !Ref DynamoDBAccessPolicy

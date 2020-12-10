@@ -13,7 +13,7 @@ Parameters:
     Default: http://schema-registry.sdp.local:8081
   Image:
     Type: String
-    Default: confluentinc/cp-kafka-connect:5.3.1
+    Default: provectuslabs/cp-kafka-connect_w_dynamosink:latest
   ContainerPort:
     Type: String
     Default: 8083

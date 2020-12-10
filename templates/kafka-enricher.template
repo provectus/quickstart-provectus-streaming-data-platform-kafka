@@ -6,7 +6,7 @@ Parameters:
     Default: sdp-enricher
   Image:
     Type: String
-    Default: provectuslabs/sdp-kafka-enricher:1.0.3
+    Default: provectuslabs/sdp-kafka-enricher:1.0.4
   PrivateSubnets:
     Type: List<AWS::EC2::Subnet::Id>
   ExecutionRole:
@@ -67,6 +67,10 @@ Resources:
               Value: visits
             - Name: TOPIC_AGGREGATIONS
               Value: aggregates
+            - Name: CLICKS_SESSION_TIMEOUT
+              Value: 10m
+            - Name: LOCATIONS_SESSION_TIMEOUT
+              Value: 10m
 
   Service:
     Type: AWS::ECS::Service

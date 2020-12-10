@@ -211,3 +211,15 @@ Resources:
           partitioner.class: 'io.confluent.connect.storage.partitioner.DefaultPartitioner'
           schema.compatibility: 'NONE'
           topics.dir: 'sink'
+
+  CreateDynamoDBSink:
+    Type: Custom::CreateConnectorDynamoDB
+    Properties:
+      ServiceToken: !GetAtt KafkaConnectProvisioner.Arn
+      connector_definition: 
+        name: !Sub 'DynamoDBSink-Aggregates-${EnvironmentName}'
+        config:
+          connector.class: 'com.provectus.kafka.dynamodb.DynamoDbSinkConnector'
+          tasks.max: '1'
+          topics: aggregates
+          dynamo.table: 'aggregates'

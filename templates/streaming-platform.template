@@ -85,6 +85,11 @@ Resources:
           Fn::GetAtt:
             - SFTP
             - Outputs.SinkAccessPolicy
+        DynamoDBAccessPolicy:
+          Fn::GetAtt:
+            - DynamoDBAggregateTable
+            - Outputs.DynamoDBAccessPolicy
+
 
 
   SchemaRegistry:
@@ -406,5 +411,15 @@ Resources:
           Fn::GetAtt:
             - MSKClusterStack
             - Outputs.MskBrokers
+
+  DynamoDBAggregateTable:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/sdp-kafka/templates/dynamodb.template'
+      Parameters:
+        EnvironmentName:
+          Ref: EnvironmentName
+
+
 
 

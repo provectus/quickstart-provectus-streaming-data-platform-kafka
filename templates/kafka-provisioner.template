@@ -191,35 +191,35 @@ Resources:
       Cause: ''
       Status: ''
 
-  InvokeTopicsProvisionerKafkaConnectConfigs:
-    Type: Custom::InvokeTopicsProvisionerKafkaConnectConfigs
-    Properties:
-      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      KafkaTopic: 
-        name: !Sub '${KafkaConnectServiceName}-configs'
-        num_partitions: 1
-        replication_factor: 3
-      Cause: ''
-      Status: ''
-
-  InvokeTopicsProvisionerKafkaConnectOffsets:
-    Type: Custom::InvokeTopicsProvisionerKafkaConnectOffsets
-    Properties:
-      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      KafkaTopic: 
-        name: !Sub '${KafkaConnectServiceName}-offsets'
-        num_partitions: 1
-        replication_factor: 3
-      Cause: ''
-      Status: ''
-
-  InvokeTopicsProvisionerKafkaConnectStatus:
-    Type: Custom::InvokeTopicsProvisionerKafkaConnectStatus
-    Properties:
-      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
-      KafkaTopic: 
-        name: !Sub '${KafkaConnectServiceName}-status'
-        num_partitions: 1
-        replication_factor: 3
-      Cause: ''
-      Status: ''
+#  InvokeTopicsProvisionerKafkaConnectConfigs:
+#    Type: Custom::InvokeTopicsProvisionerKafkaConnectConfigs
+#    Properties:
+#      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+#      KafkaTopic: 
+#        name: !Sub '${KafkaConnectServiceName}-configs'
+#        num_partitions: 1
+#        replication_factor: 3
+#      Cause: ''
+#      Status: ''
+#
+#  InvokeTopicsProvisionerKafkaConnectOffsets:
+#    Type: Custom::InvokeTopicsProvisionerKafkaConnectOffsets
+#    Properties:
+#      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+#      KafkaTopic: 
+#        name: !Sub '${KafkaConnectServiceName}-offsets'
+#        num_partitions: 1
+#        replication_factor: 3
+#      Cause: ''
+#      Status: ''
+#
+#  InvokeTopicsProvisionerKafkaConnectStatus:
+#    Type: Custom::InvokeTopicsProvisionerKafkaConnectStatus
+#    Properties:
+#      ServiceToken: !GetAtt KafkaTopicsProvisioner.Arn
+#      KafkaTopic: 
+#        name: !Sub '${KafkaConnectServiceName}-status'
+#        num_partitions: 1
+#        replication_factor: 3
+#      Cause: ''
+#      Status: ''

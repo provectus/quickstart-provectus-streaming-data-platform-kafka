@@ -13,6 +13,10 @@ Parameters:
   SinkAccessPolicy:
     Type: String
     Description: PolicyForSinkKafkaConnectors
+  DynamoDBAccessPolicy:
+    Type: String
+    Description: PolicyForDynamoDBAccess
+   
 
 Resources:
 
@@ -54,6 +58,7 @@ Resources:
             Action: 'sts:AssumeRole'
       ManagedPolicyArns: 
         - !Ref SinkAccessPolicy
+        - !Ref DynamoDBAccessPolicy
 
 
   # A role needed for auto scaling
